@@ -41,6 +41,9 @@ export interface JourneyStep {
   number: string;
   title: string;
   description: string;
+  image: string;
+  imageAlt: string;
+  caption: string;
 }
 
 export interface PageMetadataCopy {
@@ -432,9 +435,9 @@ const extendedCopy: Record<Locale, ExtendedLocaleCopy> = {
             "تعتمد الخطة الترميمية على الفحص الطبي الدقيق وتاريخ الحالة الصحي.",
           visualCaption:
             "جراحة الترميم — استعادة الشكل والوظيفة وفق احتياج كل حالة",
-          image: "/images/generated/specialty-reconstructive-care.jpg",
+          image: "/images/generated/specialty-reconstructive-editorial.jpg",
           imageAlt:
-            "صورة تحريرية طبية لطبيبة تفحص يد المراجعة بعناية لتقييم الأنسجة والوظيفة الحركية",
+            "تكوين تحريري معماري يعبر عن الترابط واستعادة الشكل والتوازن البنيوي",
           whatsappEnquiryMessage:
             "مرحبًا، أرغب في الاستفسار عن تنسيق موعد استشارة مع د. ملاك السيف (مجال جراحة الترميم).",
           ctaLabel: "طلب استشارة — جراحة الترميم",
@@ -451,9 +454,9 @@ const extendedCopy: Record<Locale, ExtendedLocaleCopy> = {
             "يتطلب تحديد الخيارات تقييمًا سريريًا مفصلًا لطبيعة الأثر وموضعه.",
           visualCaption:
             "جراحة الحروق — تقييم الحالات وآثارها ومناقشة الخيارات الملائمة",
-          image: "/images/generated/specialty-burn-care.jpg",
+          image: "/images/generated/specialty-burn-editorial.jpg",
           imageAlt:
-            "صورة تحريرية طبية تعبر عن الرعاية التخصصية والمتابعة الدقيقة لضمادات الساعد",
+            "تكوين تحريري هادئ من الأنسجة الكتانية العاجية يعبر عن العناية اللطيفة والمتابعة التأهيلية",
           whatsappEnquiryMessage:
             "مرحبًا، أرغب في الاستفسار عن تنسيق موعد استشارة مع د. ملاك السيف (مجال جراحة الحروق).",
           ctaLabel: "طلب استشارة — جراحة الحروق",
@@ -472,18 +475,27 @@ const extendedCopy: Record<Locale, ExtendedLocaleCopy> = {
           title: "التواصل",
           description:
             "التواصل عبر رقم التنسيق على واتساب أو الهاتف للاستفسار عن المواعيد المتاحة ومتطلبات الزيارة.",
+          image: "/images/generated/article-questions-to-discuss.jpg",
+          imageAlt: "بطاقات تنسيق عاجية مرتبة بعناية مع شريط أحمر داكن على سطح حجري دافئ",
+          caption: "الخطوة 01 — بدء طلب التنسيق عبر واتساب أو الهاتف",
         },
         {
           number: "02",
           title: "التقييم ومناقشة الاحتياج",
           description:
             "لقاء الاستشارة الطبية لفهم الاحتياج بدقة، ومراجعة التاريخ الصحي، وإجراء التقييم السريري المباشر.",
+          image: "/images/generated/article-consultation-prep.jpg",
+          imageAlt: "دفتر ملاحظات عاجي مفتوح مع ملف أحمر داكن وقلم على مكتب هادئ",
+          caption: "الخطوة 02 — الفحص السريري الفردي ومناقشة التوقعات",
         },
         {
           number: "03",
           title: "توضيح الخيارات والخطوات التالية",
           description:
             "شرح الخيارات الطبية المتاحة بوضوح وموضوعية، والإجابة عن الأسئلة لتمكينكِ من اتخاذ قرار واعٍ.",
+          image: "/images/generated/step-03-options.jpg",
+          imageAlt: "ثلاث كتل حجرية عاجية متدرجة بجانب ملف أحمر داكن تعبر عن وضوح الخيارات والخطوات",
+          caption: "الخطوة 03 — إيضاح الخيارات الملائمة والخطوة التالية",
         },
       ],
       cta: siteCopyData.ar.hero.primary,
@@ -846,9 +858,9 @@ const extendedCopy: Record<Locale, ExtendedLocaleCopy> = {
             "Reconstructive planning relies on a thorough medical history and physical examination.",
           visualCaption:
             "Reconstructive Surgery — Restoration of form and function tailored to individual needs",
-          image: "/images/generated/specialty-reconstructive-care.jpg",
+          image: "/images/generated/specialty-reconstructive-editorial.jpg",
           imageAlt:
-            "Clinical editorial close-up of a clinician gently examining an adult patient's hand",
+            "Architectural editorial still-life representing structural restoration and balanced form",
           whatsappEnquiryMessage:
             "Hello, I would like to enquire about coordinating a consultation with Dr. Malak Alsaif (Reconstructive surgery).",
           ctaLabel: "Request consultation — Reconstructive surgery",
@@ -865,9 +877,9 @@ const extendedCopy: Record<Locale, ExtendedLocaleCopy> = {
             "Options are discussed individually after assessing the nature and location of affected tissue.",
           visualCaption:
             "Burn Surgery — Individual assessment of burn-related concerns and tissue effects",
-          image: "/images/generated/specialty-burn-care.jpg",
+          image: "/images/generated/specialty-burn-editorial.jpg",
           imageAlt:
-            "Healthcare editorial photograph showing gentle clinical support of a dressed forearm",
+            "Calm editorial composition of folded ivory linen gauze representing gentle care and follow-up",
           whatsappEnquiryMessage:
             "Hello, I would like to enquire about coordinating a consultation with Dr. Malak Alsaif (Burn surgery).",
           ctaLabel: "Request consultation — Burn surgery",
@@ -886,18 +898,27 @@ const extendedCopy: Record<Locale, ExtendedLocaleCopy> = {
           title: "Initial Contact",
           description:
             "Contact the coordination number via WhatsApp or telephone to enquire about scheduling a consultation.",
+          image: "/images/generated/article-questions-to-discuss.jpg",
+          imageAlt: "Minimal ivory correspondence cards arranged with a fine deep-red ribbon on travertine stone",
+          caption: "Step 01 — Initial scheduling coordination via WhatsApp or phone",
         },
         {
           number: "02",
           title: "Assessment & Discussion of Needs",
           description:
             "Attend an in-person consultation to review your medical history, discuss your goals, and complete a clinical assessment.",
+          image: "/images/generated/article-consultation-prep.jpg",
+          imageAlt: "An open ivory notebook and deep-red linen folder on a calm sunlit desk",
+          caption: "Step 02 — Individual clinical assessment and discussion of goals",
         },
         {
           number: "03",
           title: "Clarifying Options & Next Steps",
           description:
             "Review appropriate options and practical next steps clearly so you can make a well-informed decision.",
+          image: "/images/generated/step-03-options.jpg",
+          imageAlt: "Three ascending warm-ivory travertine blocks beside a deep-red linen portfolio",
+          caption: "Step 03 — Objective explanation of suitable options and next steps",
         },
       ],
       cta: siteCopyData.en.hero.primary,

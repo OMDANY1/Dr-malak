@@ -10,9 +10,8 @@ import {
 import { getWhatsAppUrl } from "@/lib/links";
 import { isValidLocale } from "@/lib/locales";
 import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
-import { Container } from "@/components/ui/Container";
 import { ArticlesExplorer } from "@/components/articles/ArticlesExplorer";
-import { ContactCTA } from "@/components/sections/ContactCTA";
+import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -69,25 +68,34 @@ export default async function ArticlesPage({ params }: PageProps) {
 
   return (
     <>
-      <section className="page-hero" aria-labelledby="articles-page-heading">
-        <Container>
-          <div className="eyebrow-row">
-            <span className="eyebrow-line" aria-hidden="true" />
-            <span className="eyebrow-text">{copy.articlesPage.eyebrow}</span>
+      <section
+        className="ed-inner-red-masthead"
+        aria-labelledby="articles-page-heading"
+      >
+        <div className="ed-container">
+          <div className="ed-inner-masthead-content">
+            <div className="ed-red-hero-label-row">
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+              <span className="ed-red-hero-specialty-label">
+                01 — {copy.articlesPage.eyebrow}
+              </span>
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+            </div>
+
+            <h1 id="articles-page-heading" className="ed-inner-masthead-title">
+              {copy.articlesPage.title}
+            </h1>
+
+            <p className="ed-inner-masthead-lead">{copy.articlesPage.lead}</p>
           </div>
-          <h1 id="articles-page-heading" className="page-hero-title">
-            {copy.articlesPage.title}
-          </h1>
-          <div className="section-Rule" aria-hidden="true" />
-          <p className="page-hero-lead">{copy.articlesPage.lead}</p>
-        </Container>
+        </div>
       </section>
 
       <section
-        className="page-section section-reveal"
+        className="ed-articles-hub-section"
         aria-label={copy.articlesPage.title}
       >
-        <Container>
+        <div className="ed-container">
           <ArticlesExplorer
             locale={locale}
             articles={publishedArticles}
@@ -105,10 +113,10 @@ export default async function ArticlesPage({ params }: PageProps) {
             ctaLabel={copy.hero.primary}
             whatsappFallbackHref={whatsappUrl}
           />
-        </Container>
+        </div>
       </section>
 
-      <ContactCTA locale={locale} />
+      <FaqAndBooking locale={locale} includeFaq={false} />
     </>
   );
 }

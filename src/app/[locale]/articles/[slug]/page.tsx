@@ -17,8 +17,7 @@ import {
   localizePath,
 } from "@/lib/locales";
 import { toAbsoluteUrl } from "@/lib/seo";
-import { Container } from "@/components/ui/Container";
-import { ContactCTA } from "@/components/sections/ContactCTA";
+import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { ArticleInteractiveEnhancements } from "@/components/articles/ArticleInteractiveEnhancements";
 
 interface ArticlePageProps {
@@ -227,9 +226,10 @@ export default async function ArticleDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      <article className="article-detail-page">
-        <header className="page-hero">
-          <Container>
+      <article className="article-detail-page ed-article-detail">
+        {/* Deep-Red Editorial Article Masthead with Inset Panoramic Cover Extending into Ivory */}
+        <header className="ed-article-red-header">
+          <div className="ed-container">
             {article.status === "draft" && (
               <div className="article-draft-banner" role="status">
                 {copy.articlesPage.draftBanner}
@@ -237,61 +237,61 @@ export default async function ArticleDetailPage({
             )}
 
             <nav
-              className="breadcrumb-nav"
+              className="ed-breadcrumb-nav"
               aria-label={copy.a11y.breadcrumbLabel}
             >
-              <ol className="breadcrumb-list">
+              <ol className="ed-breadcrumb-list">
                 <li>
-                  <Link href={homeHref} className="breadcrumb-link">
+                  <Link href={homeHref} className="ed-breadcrumb-link">
                     {copy.nav.home}
                   </Link>
                 </li>
-                <li aria-hidden="true" className="breadcrumb-sep">
+                <li aria-hidden="true" className="ed-breadcrumb-sep">
                   /
                 </li>
                 <li>
-                  <Link href={articlesHubHref} className="breadcrumb-link">
+                  <Link href={articlesHubHref} className="ed-breadcrumb-link">
                     {copy.nav.articles}
                   </Link>
                 </li>
-                <li aria-hidden="true" className="breadcrumb-sep">
+                <li aria-hidden="true" className="ed-breadcrumb-sep">
                   /
                 </li>
-                <li aria-current="page" className="breadcrumb-current">
+                <li aria-current="page" className="ed-breadcrumb-current">
                   {article.title}
                 </li>
               </ol>
             </nav>
 
-            <div className="article-header-meta">
-              <span className="article-category-tag">
+            <div className="ed-article-masthead-meta">
+              <span className="ed-article-category-pill article-category-tag">
                 {getCategoryLabel(locale, article.category)}
               </span>
-              <span className="article-reading-time">
+              <span className="ed-article-reading-pill article-reading-time">
                 {copy.articlesPage.readingTimeLabel(article.readingTimeMinutes)}
               </span>
             </div>
 
-            <h1 className="page-hero-title">{article.title}</h1>
-            <div className="section-Rule" aria-hidden="true" />
-            <p className="page-hero-lead">{article.description}</p>
+            <h1 className="ed-article-masthead-title">{article.title}</h1>
+
+            <p className="ed-article-masthead-lead">{article.description}</p>
 
             {hasVerifiedByline && (
-              <dl className="article-byline-row">
+              <dl className="ed-article-byline-row">
                 {article.authorName && (
-                  <div className="article-byline-item">
+                  <div className="ed-article-byline-item">
                     <dt>{copy.articlesPage.authorLabel}:</dt>
                     <dd>{article.authorName}</dd>
                   </div>
                 )}
                 {article.reviewedBy && (
-                  <div className="article-byline-item">
+                  <div className="ed-article-byline-item">
                     <dt>{copy.articlesPage.reviewedByLabel}:</dt>
                     <dd>{article.reviewedBy}</dd>
                   </div>
                 )}
                 {article.publishedAt && (
-                  <div className="article-byline-item">
+                  <div className="ed-article-byline-item">
                     <dt>{copy.articlesPage.publishedDateLabel}:</dt>
                     <dd>
                       <time dateTime={article.publishedAt}>
@@ -301,7 +301,7 @@ export default async function ArticleDetailPage({
                   </div>
                 )}
                 {article.updatedAt && (
-                  <div className="article-byline-item">
+                  <div className="ed-article-byline-item">
                     <dt>{copy.articlesPage.updatedDateLabel}:</dt>
                     <dd>
                       <time dateTime={article.updatedAt}>
@@ -312,12 +312,10 @@ export default async function ArticleDetailPage({
                 )}
               </dl>
             )}
-          </Container>
-        </header>
+          </div>
 
-        <section className="page-section">
-          <Container>
-            <figure className="article-detail-cover">
+          <div className="ed-article-cover-stage">
+            <figure className="ed-article-cover-figure">
               <img
                 src={article.coverImage}
                 alt={article.coverAlt}
@@ -325,10 +323,14 @@ export default async function ArticleDetailPage({
                 height={720}
                 loading="eager"
                 decoding="async"
-                className="article-detail-cover-img"
+                className="ed-article-cover-img"
               />
             </figure>
+          </div>
+        </header>
 
+        <section className="ed-article-body-section">
+          <div className="ed-container">
             <div className="article-content-layout">
               {/* Top Reading Progress Indicator + Active-Section Highlighted TOC */}
               <ArticleInteractiveEnhancements
@@ -338,17 +340,23 @@ export default async function ArticleDetailPage({
 
               {/* Article Body Sections */}
               <div className="article-body-prose">
-                {article.body.map((section) => (
+                {article.body.map((section, idx) => (
                   <section
                     key={section.id}
                     id={section.id}
                     className="article-body-section"
                   >
+                    <div className="ed-eyebrow-cluster">
+                      <span className="ed-index-num" dir="ltr">
+                        0{idx + 1}
+                      </span>
+                      <span className="ed-eyebrow-rule" aria-hidden="true" />
+                    </div>
                     <h2 className="article-section-heading">
                       {section.heading}
                     </h2>
-                    {section.paragraphs.map((p, idx) => (
-                      <p key={idx} className="article-paragraph">
+                    {section.paragraphs.map((p, pIdx) => (
+                      <p key={pIdx} className="article-paragraph">
                         {p}
                       </p>
                     ))}
@@ -367,28 +375,26 @@ export default async function ArticleDetailPage({
                 <div className="article-back-row">
                   <Link href={articlesHubHref} className="btn btn-secondary">
                     <span>{copy.articlesPage.backToArticles}</span>
-                    <span className="btn-arrow-glyph" aria-hidden="true">
+                    <span aria-hidden="true">
                       {locale === "ar" ? "←" : "→"}
                     </span>
                   </Link>
                 </div>
               </div>
             </div>
-          </Container>
+          </div>
         </section>
 
         {/* Related Published Articles */}
         {relatedArticles.length > 0 && (
           <section
-            className="page-section"
-            style={{ backgroundColor: "var(--surface-ivory-elevated)" }}
+            className="ed-related-articles-section"
             aria-labelledby="related-articles-heading"
           >
-            <Container>
-              <h2 id="related-articles-heading" className="section-title">
+            <div className="ed-container">
+              <h2 id="related-articles-heading" className="ed-section-title">
                 {copy.articlesPage.relatedTitle}
               </h2>
-              <div className="section-Rule" aria-hidden="true" />
               <div className="articles-cards-grid">
                 {relatedArticles.map((rel) => {
                   const relHref = localizePath(locale, `articles/${rel.slug}`);
@@ -404,10 +410,10 @@ export default async function ArticleDetailPage({
                         <p className="article-card-desc">{rel.description}</p>
                         <Link
                           href={relHref}
-                          className="article-card-link editorial-underline-link"
+                          className="ed-inline-arrow-link"
                         >
                           <span>{copy.articlesPage.readMoreLabel}</span>
-                          <span className="btn-arrow-glyph" aria-hidden="true">
+                          <span aria-hidden="true">
                             {locale === "ar" ? "←" : "→"}
                           </span>
                         </Link>
@@ -416,12 +422,12 @@ export default async function ArticleDetailPage({
                   );
                 })}
               </div>
-            </Container>
+            </div>
           </section>
         )}
       </article>
 
-      <ContactCTA locale={locale} />
+      <FaqAndBooking locale={locale} includeFaq={false} />
     </>
   );
 }

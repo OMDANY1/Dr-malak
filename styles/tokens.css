@@ -1,15 +1,51 @@
 :root {
+  /* Locked Brand Palette */
   --brand-red: #a83232;
   --brand-cream: #fffcf0;
   --color-ink: #332725;
   --color-border: #e6d8cf;
+
+  /* Editorial Surface & Tone Tokens */
+  --ed-red-deep: #a83232;
+  --ed-red-darker: #8b2525;
+  --ed-ivory-canvas: #fffcf0;
+  --ed-ivory-warm: #f6f0e2;
+  --ed-ivory-stone: #efe7d5;
+  --ed-ink-primary: #332725;
+  --ed-ink-secondary: #5a4845;
+  --ed-ink-subtle: #7a6662;
+  --ed-rule-ivory: rgba(255, 252, 240, 0.22);
+  --ed-rule-ivory-strong: rgba(255, 252, 240, 0.45);
+  --ed-rule-ink: #e2d4c8;
+  --ed-rule-red: rgba(168, 50, 50, 0.28);
+
+  /* Authentic Typography Tokens */
   --font-display: "alghraib", "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
   /* STC webfont binaries are not yet supplied in public/fonts/.
      Do not reference an unbundled "STC" family name in CSS, because local OS "STC Regular"
      installations have broken Arabic mark/diacritic metrics that split words around harakat.
      Once verified STC webfont files and @font-face rules are added, prepend "STC" here. */
   --font-body: "Segoe UI", Tahoma, "Geeza Pro", "Noto Naskh Arabic", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --content-max: 1200px;
-  --space-section: clamp(4rem, 8vw, 7rem);
-  --radius-control: 8px;
+
+  /* New Editorial Typography Scale Tokens */
+  --ed-text-hero: clamp(2.85rem, 6.2vw, 5.6rem);
+  --ed-text-h1: clamp(2.35rem, 4.6vw, 4.1rem);
+  --ed-text-h2: clamp(1.95rem, 3.6vw, 3.15rem);
+  --ed-text-h3: clamp(1.35rem, 2.2vw, 1.85rem);
+  --ed-text-lead: clamp(1.08rem, 1.35vw, 1.28rem);
+  --ed-text-body: 1.0625rem;
+  --ed-text-meta: 0.875rem;
+
+  /* New Editorial Spacing & Layout Tokens */
+  --content-max: 1340px;
+  --ed-container-max: 1340px;
+  --ed-panoramic-max: 1400px;
+  --ed-gutter: clamp(1.25rem, 4vw, 3.25rem);
+  --space-section: clamp(4.5rem, 8.5vw, 7.75rem);
+  --ed-space-section: clamp(4.5rem, 8.5vw, 7.75rem);
+  --ed-space-cluster: clamp(2rem, 4vw, 3.75rem);
+  --ed-nav-height: 4.75rem;
+  --radius-control: 4px;
+  --ed-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
+

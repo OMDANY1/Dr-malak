@@ -1,8 +1,8 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { isValidLocale } from "@/lib/locales";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { MinimalNav } from "@/components/editorial/MinimalNav";
+import { EditorialFooter } from "@/components/editorial/EditorialFooter";
 import { LocaleDocumentSync } from "@/components/layout/LocaleDocumentSync";
 import { ConsultationDialogProvider } from "@/components/interactive/ConsultationDialogContext";
 
@@ -24,9 +24,13 @@ export default async function LocaleLayout({
   return (
     <ConsultationDialogProvider locale={locale}>
       <LocaleDocumentSync locale={locale} />
-      <Header locale={locale} />
-      <main id="main-content">{children}</main>
-      <Footer locale={locale} />
+      <div className="ed-site">
+        <MinimalNav locale={locale} />
+        <main id="main-content" className="ed-main">
+          {children}
+        </main>
+        <EditorialFooter locale={locale} />
+      </div>
     </ConsultationDialogProvider>
   );
 }

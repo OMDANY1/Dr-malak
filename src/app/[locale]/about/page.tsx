@@ -2,10 +2,11 @@ import React from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCopy, siteConfig } from "@/lib/content";
+import { getInstagramUrl, getWhatsAppUrl } from "@/lib/links";
 import { isValidLocale } from "@/lib/locales";
 import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
-import { Container } from "@/components/ui/Container";
-import { ContactCTA } from "@/components/sections/ContactCTA";
+import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
+import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { Reveal } from "@/components/interactive/Reveal";
 
@@ -54,167 +55,209 @@ export default async function AboutPage({ params }: PageProps) {
 
   const copy = getCopy(locale);
   const portraitSrc = siteConfig.doctorPortrait;
+  const whatsappUrl = getWhatsAppUrl(locale);
+  const instagramUrl = getInstagramUrl();
 
   return (
     <>
       <StructuredData locale={locale} />
 
-      {/* 1. Portrait-Led Editorial Monograph Opening */}
+      {/* 1. Deep-Red Editorial Masthead */}
       <section
-        className="about-editorial-opening"
+        className="ed-inner-red-masthead"
         aria-labelledby="about-page-heading"
       >
-        <Container>
-          <div className="about-opening-grid">
+        <div className="ed-container">
+          <div className="ed-inner-masthead-content">
+            <div className="ed-red-hero-label-row">
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+              <span className="ed-red-hero-specialty-label">
+                01 — {copy.aboutPage.eyebrow}
+              </span>
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+            </div>
+
+            <h1 id="about-page-heading" className="ed-inner-masthead-title">
+              {copy.aboutPage.title}
+            </h1>
+
+            <p className="ed-inner-masthead-lead">{copy.aboutPage.lead}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Three-Part Editorial Monograph Spread (Biography + Central Real Portrait + Verified Credentials) */}
+      <section
+        className="ed-about-monograph-section"
+        aria-labelledby="about-bio-heading"
+      >
+        <div className="ed-container">
+          <div className="ed-doctor-spread-grid">
+            {/* Part 1: Extended Biography */}
+            <Reveal variant="fade-up" className="ed-doctor-spread-intro">
+              <div className="ed-eyebrow-cluster">
+                <span className="ed-index-num" dir="ltr">
+                  01
+                </span>
+                <span className="ed-eyebrow-rule" aria-hidden="true" />
+                <span className="ed-eyebrow-label">
+                  {copy.aboutPage.eyebrow}
+                </span>
+              </div>
+
+              <h2 id="about-bio-heading" className="ed-doctor-spread-name">
+                {copy.aboutPage.biographyTitle}
+              </h2>
+
+              <div className="ed-doctor-rule" aria-hidden="true" />
+
+              <div className="ed-about-prose-stack">
+                {copy.aboutPage.biographyParagraphs.map((paragraph, index) => (
+                  <p key={index} className="ed-doctor-spread-bio">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+
+              <p className="ed-doctor-credentials-note">
+                {copy.aboutPage.editorialNotice}
+              </p>
+
+              <div className="ed-doctor-social-row">
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ed-inline-arrow-link"
+                >
+                  <span>{copy.aboutPreview.instagramLabel}</span>
+                  <span className="ltr-inline" dir="ltr">
+                    (@dralsaifma)
+                  </span>
+                  <span aria-hidden="true">{locale === "ar" ? "↖" : "↗"}</span>
+                </a>
+              </div>
+            </Reveal>
+
+            {/* Part 2: Large Central Unframed Real Doctor Portrait */}
             {portraitSrc && (
-              <Reveal variant="mask-reveal" className="about-portrait-col">
-                <figure className="about-portrait-figure">
-                  <div className="doctor-editorial-mat">
-                    <span
-                      className="doctor-architectural-corner"
-                      aria-hidden="true"
+              <Reveal
+                variant="mask-reveal"
+                delayMs={80}
+                className="ed-doctor-spread-portrait"
+              >
+                <figure className="ed-doctor-central-figure">
+                  <div className="ed-doctor-central-img-wrap">
+                    <img
+                      src={portraitSrc}
+                      alt={copy.aboutPage.portraitAlt}
+                      width={1080}
+                      height={1080}
+                      loading="eager"
+                      decoding="async"
+                      className="ed-doctor-central-img"
                     />
-                    <div className="about-portrait-crop-wrap">
-                      <img
-                        src={portraitSrc}
-                        alt={copy.aboutPage.portraitAlt}
-                        width={1080}
-                        height={1080}
-                        loading="eager"
-                        decoding="async"
-                        className="about-portrait-img"
-                      />
-                    </div>
                   </div>
-                  <figcaption className="about-portrait-caption">
-                    <span className="doctor-caption-index" dir="ltr">
-                      01
-                    </span>
-                    <span className="eyebrow-line" aria-hidden="true" />
+                  <figcaption className="ed-doctor-central-caption">
                     <span>{copy.aboutPage.portraitCaption}</span>
                   </figcaption>
                 </figure>
               </Reveal>
             )}
 
+            {/* Part 3: Verified Academic & Clinical Qualifications */}
             <Reveal
               variant="fade-up"
-              delayMs={100}
-              className="about-biography-col"
+              delayMs={140}
+              className="ed-doctor-spread-credentials"
             >
-              <div className="eyebrow-row">
-                <span className="eyebrow-line" aria-hidden="true" />
-                <span className="eyebrow-text">
-                  01 — {copy.aboutPage.eyebrow}
+              <div className="ed-eyebrow-cluster">
+                <span className="ed-index-num" dir="ltr">
+                  02
+                </span>
+                <span className="ed-eyebrow-rule" aria-hidden="true" />
+                <span className="ed-eyebrow-label">
+                  {copy.credentialsSection.eyebrow}
                 </span>
               </div>
 
-              <h1 id="about-page-heading" className="page-hero-title">
-                {copy.aboutPage.title}
-              </h1>
-
-              <p className="page-hero-lead">{copy.aboutPage.lead}</p>
-
-              <div className="section-Rule" aria-hidden="true" />
-
-              <h2 className="about-bio-subheading">
-                {copy.aboutPage.biographyTitle}
+              <h2 className="ed-doctor-credentials-heading">
+                {copy.aboutPage.credentialsTitle}
               </h2>
 
-              <div className="editorial-prose">
-                {copy.aboutPage.biographyParagraphs.map((paragraph, index) => (
-                  <p key={index} className="about-bio-paragraph">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-
-              <p className="about-editorial-notice">
-                {copy.aboutPage.editorialNotice}
-              </p>
-            </Reveal>
-          </div>
-        </Container>
-      </section>
-
-      {/* 2. Open Editorial Credentials & Care Philosophy Spread */}
-      <section
-        className="about-open-spread-section"
-        aria-labelledby="credentials-spread-heading"
-      >
-        <Container>
-          <div className="about-open-spread-grid">
-            {/* Confirmed Academic & Clinical Credentials */}
-            <Reveal variant="fade-up" className="about-open-col">
-              <div className="eyebrow-row">
-                <span className="eyebrow-line" aria-hidden="true" />
-                <span className="eyebrow-text">
-                  02 — {copy.credentialsSection.eyebrow}
-                </span>
-              </div>
-
-              <h2 id="credentials-spread-heading" className="section-title">
-                {copy.credentialsSection.title}
-              </h2>
-
-              <ol className="doctor-open-credentials">
+              <ol className="ed-doctor-credentials-list">
                 {copy.credentialsSection.items.map((item, idx) => (
-                  <li
-                    key={item.label}
-                    className="doctor-open-credential-point"
-                  >
-                    <span className="doctor-point-num" dir="ltr">
+                  <li key={item.label} className="ed-doctor-credential-item">
+                    <span className="ed-credential-num" dir="ltr">
                       0{idx + 1}
                     </span>
-                    <div className="doctor-point-body">
-                      <span className="doctor-point-label">{item.label}</span>
-                      <p className="doctor-point-text">{item.text}</p>
+                    <div className="ed-credential-content">
+                      <span className="ed-credential-label">{item.label}</span>
+                      <p className="ed-credential-text">{item.text}</p>
                     </div>
                   </li>
                 ))}
               </ol>
 
-              <p className="credentials-footnote">
-                {copy.credentialsSection.note}
+              <p className="ed-doctor-credentials-note">
+                {copy.aboutPage.credentialsSubtitle}
               </p>
-            </Reveal>
 
-            {/* Care Approach & Principles (Open Horizontal Rows) */}
-            <Reveal
-              variant="fade-up"
-              delayMs={120}
-              className="about-open-col"
-            >
-              <div className="eyebrow-row">
-                <span className="eyebrow-line" aria-hidden="true" />
-                <span className="eyebrow-text">
-                  03 — {copy.aboutPage.approachEyebrow}
-                </span>
-              </div>
-
-              <h2 className="section-title">{copy.aboutPage.approachTitle}</h2>
-
-              <div className="about-open-pillars-list">
-                {copy.aboutPage.approachPillars.map((pillar, idx) => (
-                  <article key={pillar.title} className="about-open-pillar-row">
-                    <div className="about-open-pillar-header">
-                      <span className="doctor-point-num" dir="ltr">
-                        0{idx + 1}
-                      </span>
-                      <h3 className="about-open-pillar-title">
-                        {pillar.title}
-                      </h3>
-                    </div>
-                    <p className="about-open-pillar-body">{pillar.body}</p>
-                  </article>
-                ))}
+              <div className="ed-doctor-profile-action">
+                <ConsultationTriggerButton
+                  label={copy.hero.primary}
+                  topicId="general"
+                  variant="primary"
+                  fallbackHref={whatsappUrl}
+                />
               </div>
             </Reveal>
           </div>
-        </Container>
+        </div>
       </section>
 
-      <ContactCTA locale={locale} />
+      {/* 3. Consultation Philosophy & Principles (3-Column Editorial Ledger) */}
+      <section
+        className="ed-about-pillars-section"
+        aria-labelledby="about-philosophy-heading"
+      >
+        <div className="ed-container">
+          <Reveal variant="fade-up" className="ed-about-pillars-header">
+            <div className="ed-eyebrow-cluster">
+              <span className="ed-index-num" dir="ltr">
+                03
+              </span>
+              <span className="ed-eyebrow-rule" aria-hidden="true" />
+              <span className="ed-eyebrow-label">
+                {copy.aboutPage.approachEyebrow}
+              </span>
+            </div>
+
+            <h2 id="about-philosophy-heading" className="ed-section-title">
+              {copy.aboutPage.approachTitle}
+            </h2>
+          </Reveal>
+
+          <div className="ed-about-pillars-grid">
+            {copy.aboutPage.approachPillars.map((pillar, idx) => (
+              <Reveal
+                key={pillar.title}
+                variant="fade-up"
+                delayMs={idx * 90}
+                className="ed-about-pillar-card"
+              >
+                <span className="ed-about-pillar-num" dir="ltr">
+                  0{idx + 1}
+                </span>
+                <h3 className="ed-about-pillar-title">{pillar.title}</h3>
+                <p className="ed-about-pillar-body">{pillar.body}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <FaqAndBooking locale={locale} includeFaq={false} />
     </>
   );
 }

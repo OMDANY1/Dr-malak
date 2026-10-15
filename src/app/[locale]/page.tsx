@@ -4,12 +4,12 @@ import { notFound } from "next/navigation";
 import { getCopy, siteConfig } from "@/lib/content";
 import { isValidLocale } from "@/lib/locales";
 import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
-import { Hero } from "@/components/sections/Hero";
-import { AboutPreview } from "@/components/sections/AboutPreview";
-import { Specialties } from "@/components/sections/Specialties";
-import { ConsultationJourney } from "@/components/sections/ConsultationJourney";
-import { ArticlesPreview } from "@/components/sections/ArticlesPreview";
-import { ContactCTA } from "@/components/sections/ContactCTA";
+import { TypographicRedHero } from "@/components/editorial/TypographicRedHero";
+import { SpecialtyGallery } from "@/components/editorial/SpecialtyGallery";
+import { DoctorEditorialSpread } from "@/components/editorial/DoctorEditorialSpread";
+import { InteractiveConsultationSteps } from "@/components/editorial/InteractiveConsultationSteps";
+import { EditorialJournal } from "@/components/editorial/EditorialJournal";
+import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { StructuredData } from "@/components/seo/StructuredData";
 
 interface PageProps {
@@ -58,22 +58,18 @@ export default async function HomePage({ params }: PageProps) {
   return (
     <>
       <StructuredData locale={locale} />
-      {/* 1. Immersive Photographic Hero */}
-      <Hero locale={locale} />
-      {/* 2. Meet Dr. Malak */}
-      <AboutPreview locale={locale} />
-      {/* 3. Explore the Areas of Practice */}
-      <Specialties
-        locale={locale}
-        showExtendedDetail={false}
-        showPageLink={true}
-      />
-      {/* 4. Your Consultation Journey */}
-      <ConsultationJourney locale={locale} />
-      {/* 5. Articles and Patient Education */}
-      <ArticlesPreview locale={locale} />
-      {/* 6. Questions and Contact */}
-      <ContactCTA locale={locale} includeFaq={true} />
+      {/* 1. Typographic Red Hero with Inset Panoramic Photograph */}
+      <TypographicRedHero locale={locale} />
+      {/* 2. Asymmetric Visual Specialty Gallery + Accessible Detail Panel */}
+      <SpecialtyGallery locale={locale} />
+      {/* 3. Doctor Profile as a Three-Part Editorial Spread */}
+      <DoctorEditorialSpread locale={locale} />
+      {/* 4. Contained Interactive Consultation Steps Module */}
+      <InteractiveConsultationSteps locale={locale} />
+      {/* 5. Distinct Editorial Journal Layout */}
+      <EditorialJournal locale={locale} />
+      {/* 6. Compact Accessible FAQ + Spacious Ivory Booking Section */}
+      <FaqAndBooking locale={locale} includeFaq={true} />
     </>
   );
 }

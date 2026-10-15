@@ -5,10 +5,9 @@ import { getCopy, siteConfig } from "@/lib/content";
 import { getWhatsAppUrl } from "@/lib/links";
 import { isValidLocale } from "@/lib/locales";
 import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
-import { Container } from "@/components/ui/Container";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
-import { ConsultationJourney } from "@/components/sections/ConsultationJourney";
-import { ContactCTA } from "@/components/sections/ContactCTA";
+import { InteractiveConsultationSteps } from "@/components/editorial/InteractiveConsultationSteps";
+import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { Reveal } from "@/components/interactive/Reveal";
 
 interface PageProps {
@@ -59,46 +58,55 @@ export default async function SpecialtiesPage({ params }: PageProps) {
 
   return (
     <>
-      {/* Editorial Header with Quick Jump Anchor Links */}
+      {/* 1. Deep-Red Editorial Masthead with Chapter Index Bar */}
       <section
-        className="page-hero specialties-page-hero"
+        className="ed-inner-red-masthead"
         aria-labelledby="specialties-page-heading"
       >
-        <Container>
-          <div className="eyebrow-row">
-            <span className="eyebrow-line" aria-hidden="true" />
-            <span className="eyebrow-text">
-              01 — {copy.specialtiesPage.eyebrow}
-            </span>
-          </div>
-          <h1 id="specialties-page-heading" className="page-hero-title">
-            {copy.specialtiesPage.title}
-          </h1>
-          <div className="section-Rule" aria-hidden="true" />
-          <p className="page-hero-lead">{copy.specialtiesPage.lead}</p>
+        <div className="ed-container">
+          <div className="ed-inner-masthead-content">
+            <div className="ed-red-hero-label-row">
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+              <span className="ed-red-hero-specialty-label">
+                01 — {copy.specialtiesPage.eyebrow}
+              </span>
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+            </div>
 
-          <nav
-            className="specialties-anchor-nav"
-            aria-label={copy.specialtiesSection.tabsAriaLabel}
-          >
-            {items.map((item) => (
-              <a
-                key={item.id}
-                href={`#chapter-${item.id}`}
-                className="specialties-anchor-pill"
-              >
-                <span className="ltr-inline" dir="ltr">
-                  {item.number}
-                </span>
-                <span>{item.title}</span>
-              </a>
-            ))}
-          </nav>
-        </Container>
+            <h1
+              id="specialties-page-heading"
+              className="ed-inner-masthead-title"
+            >
+              {copy.specialtiesPage.title}
+            </h1>
+
+            <p className="ed-inner-masthead-lead">
+              {copy.specialtiesPage.lead}
+            </p>
+
+            <nav
+              className="ed-masthead-anchor-bar"
+              aria-label={copy.specialtiesSection.tabsAriaLabel}
+            >
+              {items.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#chapter-${item.id}`}
+                  className="ed-masthead-anchor-pill"
+                >
+                  <span className="ltr-inline" dir="ltr">
+                    {item.number}
+                  </span>
+                  <span>{item.title}</span>
+                </a>
+              ))}
+            </nav>
+          </div>
+        </div>
       </section>
 
-      {/* Three Visually Distinct Alternating Photographic Sections */}
-      <div className="specialties-chapters-wrapper">
+      {/* 2. Three Alternating Editorial Monograph Chapters */}
+      <div className="ed-specialties-chapters">
         {items.map((item, idx) => {
           const itemWhatsappUrl = getWhatsAppUrl(
             locale,
@@ -110,37 +118,37 @@ export default async function SpecialtiesPage({ params }: PageProps) {
             <section
               key={item.id}
               id={`chapter-${item.id}`}
-              className={`specialty-chapter-section ${
+              className={`ed-specialty-chapter ${
                 isReversed ? "is-reversed" : ""
               }`.trim()}
               aria-labelledby={`heading-${item.id}`}
             >
-              <Container>
-                <div className="specialty-chapter-grid">
+              <div className="ed-container">
+                <div className="ed-specialty-chapter-grid">
                   <Reveal
                     variant="mask-reveal"
-                    className="specialty-chapter-media"
+                    className="ed-specialty-chapter-media"
                   >
-                    <figure className="specialty-chapter-figure">
-                      <div className="specialty-chapter-img-wrap">
+                    <figure className="ed-specialty-chapter-figure">
+                      <div className="ed-specialty-chapter-img-frame">
                         <img
                           src={item.image}
                           alt={item.imageAlt}
-                          width={896}
-                          height={1152}
+                          width={idx === 0 ? 896 : 1024}
+                          height={idx === 0 ? 1152 : 768}
                           loading={idx === 0 ? "eager" : "lazy"}
                           decoding="async"
-                          className="specialty-chapter-img"
+                          className="ed-specialty-chapter-img"
                         />
                         <span
-                          className="specialty-stage-photo-badge"
+                          className="ed-gallery-index-tag"
                           dir="ltr"
                           aria-hidden="true"
                         >
                           {item.number} / 0{items.length}
                         </span>
                       </div>
-                      <figcaption className="specialty-visual-caption">
+                      <figcaption className="ed-specialty-sheet-caption">
                         {item.visualCaption}
                       </figcaption>
                     </figure>
@@ -149,111 +157,106 @@ export default async function SpecialtiesPage({ params }: PageProps) {
                   <Reveal
                     variant="fade-up"
                     delayMs={100}
-                    className="specialty-chapter-copy"
+                    className="ed-specialty-chapter-copy"
                   >
-                    <div className="specialty-panel-badge-row">
-                      <span className="specialty-number" dir="ltr">
+                    <div className="ed-eyebrow-cluster">
+                      <span className="ed-index-num" dir="ltr">
                         {item.number}
                       </span>
-                      <span className="eyebrow-line" aria-hidden="true" />
-                      <span className="eyebrow-text">
+                      <span className="ed-eyebrow-rule" aria-hidden="true" />
+                      <span className="ed-eyebrow-label">
                         {copy.specialtiesSection.eyebrow}
                       </span>
                     </div>
 
                     <h2
                       id={`heading-${item.id}`}
-                      className="specialty-chapter-title"
+                      className="ed-specialty-chapter-title"
                     >
                       {item.title}
                     </h2>
 
-                    <p className="specialty-summary">{item.summary}</p>
-                    <p className="specialty-detail">{item.detail}</p>
+                    <p className="ed-specialty-sheet-summary">{item.summary}</p>
+                    <p className="ed-specialty-sheet-detail">{item.detail}</p>
 
-                    <p className="specialty-assessment-note">
-                      <span
-                        className="eyebrow-line"
-                        style={{ width: "1.25rem" }}
-                        aria-hidden="true"
-                      />
-                      <span>{item.assessmentNote}</span>
-                    </p>
+                    <div className="ed-specialty-sheet-note">
+                      <span className="ed-eyebrow-rule" aria-hidden="true" />
+                      <p>{item.assessmentNote}</p>
+                    </div>
 
-                    <div className="specialty-panel-actions">
+                    <div className="ed-specialty-sheet-actions">
                       <ConsultationTriggerButton
                         label={item.ctaLabel}
                         topicId={item.id}
                         variant="primary"
                         fallbackHref={itemWhatsappUrl}
                       />
+
                       <a
                         href={itemWhatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="specialty-direct-wa-link editorial-underline-link"
+                        className="ed-inline-arrow-link"
                       >
                         <span>
                           {copy.specialtiesSection.directWhatsappCta}
                         </span>
-                        <span className="btn-arrow-glyph" aria-hidden="true">
+                        <span aria-hidden="true">
                           {locale === "ar" ? "↖" : "↗"}
                         </span>
                       </a>
                     </div>
                   </Reveal>
                 </div>
-              </Container>
+              </div>
             </section>
           );
         })}
       </div>
 
-      {/* Deep-Red Consultation Journey */}
-      <ConsultationJourney locale={locale} />
-
-      {/* Warm-Ivory Clinical Assessment Principles (separating the two red sections) */}
+      {/* 3. Clinical Assessment Context Spread */}
       <section
-        className="specialties-context-section"
+        className="ed-specialties-context-section"
         aria-labelledby="assessment-context-heading"
       >
-        <Container>
-          <div className="editorial-two-col">
+        <div className="ed-container">
+          <div className="ed-context-spread-grid">
             <div>
-              <div className="eyebrow-row">
-                <span className="eyebrow-line" aria-hidden="true" />
-                <span className="eyebrow-text">
+              <div className="ed-eyebrow-cluster">
+                <span className="ed-eyebrow-rule" aria-hidden="true" />
+                <span className="ed-eyebrow-label">
                   {copy.specialtiesPage.scopeNoteTitle}
                 </span>
               </div>
-              <h2 id="assessment-context-heading" className="section-title">
+              <h2 id="assessment-context-heading" className="ed-section-title">
                 {copy.specialtiesPage.consultationContextTitle}
               </h2>
-              <p
-                style={{
-                  marginBlockStart: "1rem",
-                  color: "var(--color-ink-muted)",
-                  lineHeight: 1.85,
-                }}
-              >
+              <p className="ed-context-scope-body">
                 {copy.specialtiesPage.scopeNoteBody}
               </p>
             </div>
 
-            <div className="editorial-prose">
-              <ul className="editorial-bullet-list">
-                {copy.specialtiesPage.consultationContextPoints.map((point) => (
-                  <li key={point} className="editorial-bullet-item">
-                    {point}
+            <ol className="ed-context-points-list">
+              {copy.specialtiesPage.consultationContextPoints.map(
+                (point, idx) => (
+                  <li key={point} className="ed-context-point-item">
+                    <span className="ed-credential-num" dir="ltr">
+                      0{idx + 1}
+                    </span>
+                    <p>{point}</p>
                   </li>
-                ))}
-              </ul>
-            </div>
+                )
+              )}
+            </ol>
           </div>
-        </Container>
+        </div>
       </section>
 
-      <ContactCTA locale={locale} />
+      {/* 4. Contained Interactive Consultation Steps Module */}
+      <InteractiveConsultationSteps locale={locale} />
+
+      {/* 5. Spacious Ivory Booking Section */}
+      <FaqAndBooking locale={locale} includeFaq={false} />
     </>
   );
 }

@@ -10,10 +10,8 @@ import {
 } from "@/lib/links";
 import { isValidLocale } from "@/lib/locales";
 import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
-import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
-import { ContactCTA } from "@/components/sections/ContactCTA";
+import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { Reveal } from "@/components/interactive/Reveal";
 
 interface PageProps {
@@ -67,207 +65,174 @@ export default async function ContactPage({ params }: PageProps) {
 
   return (
     <>
+      {/* 1. Deep-Red Editorial Masthead */}
       <section
-        className="contact-unified-page-section"
+        className="ed-inner-red-masthead"
         aria-labelledby="contact-page-heading"
       >
-        <Container>
-          <div className="contact-unified-grid">
-            {/* Column 1: Direct Consultation Action & Open Channels Directory */}
-            <Reveal variant="fade-up" className="contact-unified-main-col">
-              <div className="eyebrow-row">
-                <span className="eyebrow-line" aria-hidden="true" />
-                <span className="eyebrow-text">
-                  01 — {copy.contactPage.eyebrow}
-                </span>
-              </div>
+        <div className="ed-container">
+          <div className="ed-inner-masthead-content">
+            <div className="ed-red-hero-label-row">
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+              <span className="ed-red-hero-specialty-label">
+                01 — {copy.contactPage.eyebrow}
+              </span>
+              <span className="ed-red-hero-rule" aria-hidden="true" />
+            </div>
 
-              <h1 id="contact-page-heading" className="page-hero-title">
-                {copy.contactPage.title}
-              </h1>
+            <h1 id="contact-page-heading" className="ed-inner-masthead-title">
+              {copy.contactPage.title}
+            </h1>
 
-              <div className="section-Rule" aria-hidden="true" />
+            <p className="ed-inner-masthead-lead">{copy.contactPage.lead}</p>
 
-              <p className="page-hero-lead">{copy.contactPage.lead}</p>
-
-              <div className="contact-cta-buttons">
-                <ConsultationTriggerButton
-                  label={copy.contactPage.whatsappCard.action}
-                  topicId="general"
-                  variant="primary"
-                  fallbackHref={whatsappUrl}
-                />
-                <Button href={telUrl} variant="secondary" external>
-                  <span>{copy.contactPage.phoneCard.action}</span>
-                  <span>&nbsp;</span>
-                  <span className="ltr-inline" dir="ltr">
-                    ({phone.raw})
-                  </span>
-                </Button>
-              </div>
-
-              <p className="contact-concise-clarification">
-                {copy.hero.coordinationNote}
-              </p>
-
-              {/* Open Editorial Contact Directory */}
-              <div
-                className="contact-open-directory"
-                aria-label={copy.contactPage.channelsTitle}
+            <div className="ed-red-hero-action-cluster">
+              <ConsultationTriggerButton
+                label={copy.contactPage.whatsappCard.action}
+                topicId="general"
+                variant="ivory"
+                fallbackHref={whatsappUrl}
+              />
+              <a
+                href={telUrl}
+                className="ed-masthead-tel-pill ltr-inline"
+                dir="ltr"
               >
-                <article className="contact-directory-row">
-                  <div className="contact-directory-meta">
-                    <span className="contact-channel-label">
-                      01 · {copy.contactPage.whatsappCard.label}
-                    </span>
-                    <h2 className="contact-directory-title">
-                      {copy.contactPage.whatsappCard.title}
-                    </h2>
-                    <p className="contact-directory-desc">
-                      {copy.contactPage.whatsappCard.description}
-                    </p>
-                  </div>
-                  <div className="contact-directory-action">
-                    <a
-                      href={whatsappUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="editorial-underline-link"
-                    >
-                      <span>{copy.contactCta.directWhatsappLinkLabel}</span>
-                      <span aria-hidden="true">
-                        {locale === "ar" ? "↖" : "↗"}
-                      </span>
-                    </a>
-                  </div>
-                </article>
+                {phone.formatted}
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
 
-                <article className="contact-directory-row">
-                  <div className="contact-directory-meta">
-                    <span className="contact-channel-label">
-                      02 · {copy.contactPage.phoneCard.label}
-                    </span>
-                    <h2 className="contact-directory-title">
-                      {copy.contactPage.phoneCard.title}
-                    </h2>
-                    <p className="contact-directory-desc">
-                      {copy.contactPage.phoneCard.description}
-                    </p>
-                  </div>
-                  <div className="contact-directory-action">
-                    <a
-                      href={telUrl}
-                      className="contact-phone-display ltr-inline"
-                      dir="ltr"
-                    >
-                      {phone.raw}
-                    </a>
-                  </div>
-                </article>
+      {/* 2. Three-Column Architectural Coordination Channels Showcase */}
+      <section
+        className="ed-contact-channels-section"
+        aria-labelledby="contact-channels-heading"
+      >
+        <div className="ed-container">
+          <Reveal variant="fade-up" className="ed-contact-channels-header">
+            <div className="ed-eyebrow-cluster">
+              <span className="ed-index-num" dir="ltr">
+                02
+              </span>
+              <span className="ed-eyebrow-rule" aria-hidden="true" />
+              <span className="ed-eyebrow-label">
+                {copy.contactPage.eyebrow}
+              </span>
+            </div>
+            <h2 id="contact-channels-heading" className="ed-section-title">
+              {copy.contactPage.channelsTitle}
+            </h2>
+          </Reveal>
 
-                <article className="contact-directory-row">
-                  <div className="contact-directory-meta">
-                    <span className="contact-channel-label">
-                      03 · {copy.contactPage.instagramCard.label}
-                    </span>
-                    <h2 className="contact-directory-title">
-                      {copy.contactPage.instagramCard.title}
-                    </h2>
-                    <p className="contact-directory-desc">
-                      {copy.contactPage.instagramCard.description}
-                    </p>
-                  </div>
-                  <div className="contact-directory-action">
-                    <a
-                      href={instagramUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="instagram-editorial-link editorial-underline-link"
-                    >
-                      <span className="ltr-inline" dir="ltr">
-                        @dralsaifma
-                      </span>
-                      <span aria-hidden="true">
-                        {locale === "ar" ? "↖" : "↗"}
-                      </span>
-                    </a>
-                  </div>
-                </article>
+          <div className="ed-contact-channels-grid">
+            {/* Channel 01: WhatsApp Coordination */}
+            <Reveal variant="fade-up" className="ed-contact-channel-card">
+              <span className="ed-about-pillar-num" dir="ltr">
+                01 · {copy.contactPage.whatsappCard.label}
+              </span>
+              <h3 className="ed-about-pillar-title">
+                {copy.contactPage.whatsappCard.title}
+              </h3>
+              <p className="ed-about-pillar-body">
+                {copy.contactPage.whatsappCard.description}
+              </p>
+              <div className="ed-contact-channel-action">
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ed-inline-arrow-link"
+                >
+                  <span>{copy.contactCta.directWhatsappLinkLabel}</span>
+                  <span aria-hidden="true">
+                    {locale === "ar" ? "↖" : "↗"}
+                  </span>
+                </a>
               </div>
             </Reveal>
 
-            {/* Column 2: Coordination Guidelines & Administrative FAQ */}
+            {/* Channel 02: Coordination Phone */}
             <Reveal
               variant="fade-up"
-              delayMs={120}
-              className="contact-unified-faq-col"
+              delayMs={90}
+              className="ed-contact-channel-card"
             >
-              <div className="contact-guidelines-ledger">
-                <div className="eyebrow-row">
-                  <span className="eyebrow-line" aria-hidden="true" />
-                  <span className="eyebrow-text">
-                    02 — {copy.contactPage.importantNoticeTitle}
-                  </span>
-                </div>
-                <ul className="editorial-bullet-list">
-                  {copy.contactPage.importantNotices.map((notice) => (
-                    <li key={notice} className="editorial-bullet-item">
-                      {notice}
-                    </li>
-                  ))}
-                </ul>
+              <span className="ed-about-pillar-num" dir="ltr">
+                02 · {copy.contactPage.phoneCard.label}
+              </span>
+              <h3 className="ed-about-pillar-title">
+                {copy.contactPage.phoneCard.title}
+              </h3>
+              <p className="ed-about-pillar-body">
+                {copy.contactPage.phoneCard.description}
+              </p>
+              <div className="ed-contact-channel-action">
+                <a
+                  href={telUrl}
+                  className="ed-contact-phone-large ltr-inline"
+                  dir="ltr"
+                >
+                  {phone.formatted}
+                </a>
               </div>
+            </Reveal>
 
-              <div className="eyebrow-row" style={{ marginBlockStart: "2.5rem" }}>
-                <span className="eyebrow-line" aria-hidden="true" />
-                <span className="eyebrow-text">
-                  03 — {copy.faqSection.eyebrow}
-                </span>
-              </div>
-
-              <h2 className="section-title">{copy.faqSection.title}</h2>
-              <p className="questions-col-intro">{copy.faqSection.intro}</p>
-
-              <div className="faq-list">
-                {copy.faqSection.items.map((item, index) => (
-                  <details
-                    key={item.q}
-                    className="faq-item"
-                    open={index === 0}
-                  >
-                    <summary className="faq-summary">
-                      <span className="faq-summary-text">
-                        <span className="faq-num ltr-inline" dir="ltr">
-                          0{index + 1}
-                        </span>
-                        <span>{item.q}</span>
-                      </span>
-                      <svg
-                        className="faq-icon"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M10 3V17M3 10H17"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="square"
-                        />
-                      </svg>
-                    </summary>
-                    <div className="faq-answer">
-                      <p>{item.a}</p>
-                    </div>
-                  </details>
-                ))}
+            {/* Channel 03: Official Instagram */}
+            <Reveal
+              variant="fade-up"
+              delayMs={180}
+              className="ed-contact-channel-card"
+            >
+              <span className="ed-about-pillar-num" dir="ltr">
+                03 · {copy.contactPage.instagramCard.label}
+              </span>
+              <h3 className="ed-about-pillar-title">
+                {copy.contactPage.instagramCard.title}
+              </h3>
+              <p className="ed-about-pillar-body">
+                {copy.contactPage.instagramCard.description}
+              </p>
+              <div className="ed-contact-channel-action">
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ed-inline-arrow-link ltr-inline"
+                  dir="ltr"
+                >
+                  <span>@dralsaifma</span>
+                  <span aria-hidden="true">↗</span>
+                </a>
               </div>
             </Reveal>
           </div>
-        </Container>
+
+          {/* Pre-Contact Guidelines Ledger */}
+          <Reveal variant="fade-up" className="ed-contact-guidelines-box">
+            <div className="ed-eyebrow-cluster">
+              <span className="ed-eyebrow-rule" aria-hidden="true" />
+              <span className="ed-eyebrow-label">
+                {copy.contactPage.importantNoticeTitle}
+              </span>
+            </div>
+            <ol className="ed-context-points-list">
+              {copy.contactPage.importantNotices.map((notice, idx) => (
+                <li key={notice} className="ed-context-point-item">
+                  <span className="ed-credential-num" dir="ltr">
+                    0{idx + 1}
+                  </span>
+                  <p>{notice}</p>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
+        </div>
       </section>
 
-      <ContactCTA locale={locale} />
+      {/* 3. Compact Accessible FAQ + Spacious Ivory Booking Section */}
+      <FaqAndBooking locale={locale} includeFaq={true} />
     </>
   );
 }

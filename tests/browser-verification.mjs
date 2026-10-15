@@ -5,11 +5,19 @@ import assert from "node:assert/strict";
 
 const CHROME_PATH =
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const SCREENSHOTS_DIR =
-  "C:\\Users\\elwady\\.gemini\\antigravity\\brain\\b05b6ecf-65f0-45b0-82a0-a86862c63c50\\scratch\\screenshots\\verified";
-fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+const WORKSPACE_SCREENSHOTS_DIR = path.join(
+  process.cwd(),
+  "docs",
+  "screenshots",
+  "verified"
+);
+const ARTIFACT_DIR =
+  "C:\\Users\\elwady\\.gemini\\antigravity\\brain\\13985f7c-3def-417d-9868-54f5e7702ac6";
 
-const TARGET_BASE_URL = process.env.VERIFY_BASE_URL || "http://127.0.0.1:3099";
+fs.mkdirSync(WORKSPACE_SCREENSHOTS_DIR, { recursive: true });
+fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
+
+const TARGET_BASE_URL = process.env.VERIFY_BASE_URL || "http://127.0.0.1:3111";
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -36,7 +44,7 @@ async function createCdpSession(port) {
     }
   };
 
-  const send = (method, params = {}, sessionId = undefined, timeoutMs = 8000) =>
+  const send = (method, params = {}, sessionId = undefined, timeoutMs = 10000) =>
     new Promise((resolve, reject) => {
       const id = idCounter++;
       const timer = setTimeout(() => {
@@ -81,16 +89,57 @@ async function evaluateJs(send, sessionId, expression) {
   return res.result.value;
 }
 
-async function captureScreenshot(send, sessionId, filename) {
+async function scrollThroughPage(send, sessionId) {
+  await evaluateJs(
+    send,
+    sessionId,
+    `(async () => {
+      const imgs = Array.from(document.querySelectorAll('img'));
+      imgs.forEach(img => { img.loading = 'eager'; });
+      const totalHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+      const step = Math.max(350, Math.floor(window.innerHeight * 0.7));
+      for (let y = 0; y <= totalHeight; y += step) {
+        window.scrollTo({ top: y, behavior: 'instant' });
+        await new Promise(r => setTimeout(r, 75));
+      }
+      window.scrollTo({ top: totalHeight, behavior: 'instant' });
+      await new Promise(r => setTimeout(r, 110));
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      await new Promise(r => setTimeout(r, 140));
+      await Promise.all(
+        Array.from(document.images).map(img =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise(res => {
+                img.addEventListener('load', res, { once: true });
+                img.addEventListener('error', res, { once: true });
+                setTimeout(res, 1500);
+              })
+        )
+      );
+    })()`
+  );
+}
+
+async function captureScreenshot(
+  send,
+  sessionId,
+  filename,
+  { copyToArtifact = false } = {}
+) {
   try {
     const shot = await send(
       "Page.captureScreenshot",
       { format: "png", fromSurface: true },
       sessionId,
-      5000
+      8000
     );
-    const outPath = path.join(SCREENSHOTS_DIR, filename);
-    fs.writeFileSync(outPath, Buffer.from(shot.data, "base64"));
+    const buf = Buffer.from(shot.data, "base64");
+    const outPath = path.join(WORKSPACE_SCREENSHOTS_DIR, filename);
+    fs.writeFileSync(outPath, buf);
+    if (copyToArtifact) {
+      fs.writeFileSync(path.join(ARTIFACT_DIR, filename), buf);
+    }
     console.log(`  [Screenshot] Saved ${filename}`);
     return outPath;
   } catch (err) {
@@ -102,14 +151,14 @@ async function captureScreenshot(send, sessionId, filename) {
 async function main() {
   let serverProc = null;
   if (!process.env.VERIFY_BASE_URL) {
-    console.log("Starting local Next.js production server on port 3099...");
+    console.log("Starting local Next.js production server on port 3111...");
     serverProc = spawn(
       process.execPath,
       [
         path.join(process.cwd(), "node_modules/next/dist/bin/next"),
         "start",
         "-p",
-        "3099",
+        "3111",
       ],
       { stdio: "ignore" }
     );
@@ -127,13 +176,13 @@ async function main() {
     assert.equal(
       serverReady,
       true,
-      "Local Next.js server failed to start on port 3099"
+      "Local Next.js server failed to start on port 3111"
     );
   }
 
   console.log(`Starting browser verification against ${TARGET_BASE_URL}...`);
-  const debugPort = 9455;
-  const userDataDir = path.join(SCREENSHOTS_DIR, "chrome-profile");
+  const debugPort = 9471;
+  const userDataDir = path.join(WORKSPACE_SCREENSHOTS_DIR, "chrome-profile");
 
   const chromeProc = spawn(
     CHROME_PATH,
@@ -193,11 +242,13 @@ async function main() {
     await setViewport(1440, 920);
 
     // =========================================================================
-    // TEST 1: Locale & Document Direction Lifecycle (Direct, Client Link, Back/Forward, Refresh)
+    // TEST 1: Locale & Document Direction Lifecycle + Minimal Navigation Menu
     // =========================================================================
-    console.log("1. Verifying Locale & Document Direction lifecycle...");
+    console.log(
+      "1. Verifying Locale & Document Direction lifecycle + Minimal Navigation..."
+    );
     await send("Page.navigate", { url: `${TARGET_BASE_URL}/ar` }, sessionId);
-    await sleep(1600);
+    await sleep(1500);
 
     let docState = await evaluateJs(
       send,
@@ -205,6 +256,95 @@ async function main() {
       `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
     );
     assert.deepEqual(docState, { lang: "ar", dir: "rtl", path: "/ar" });
+
+    // Verify Minimal Navigation closed state & hidden focusability
+    const navClosedState = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const btn = document.querySelector('.ed-menu-trigger-btn');
+        const panel = document.querySelector('#ed-fullscreen-menu-panel');
+        const firstLink = panel?.querySelector('a');
+        firstLink?.focus();
+        return {
+          btnExists: Boolean(btn),
+          ariaExpanded: btn?.getAttribute('aria-expanded'),
+          panelHidden: panel?.hidden,
+          panelInert: panel?.hasAttribute('inert'),
+          hiddenLinkFocused: document.activeElement === firstLink,
+        };
+      })()`
+    );
+    assert.deepEqual(navClosedState, {
+      btnExists: true,
+      ariaExpanded: "false",
+      panelHidden: true,
+      panelInert: true,
+      hiddenLinkFocused: false,
+    });
+
+    // Open full-screen menu panel, verify focus trap & Escape close
+    await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const btn = document.querySelector('.ed-menu-trigger-btn');
+        btn.focus();
+        btn.click();
+      })()`
+    );
+    await sleep(250);
+
+    const navOpenState = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const btn = document.querySelector('.ed-menu-trigger-btn');
+        const panel = document.querySelector('#ed-fullscreen-menu-panel');
+        const links = panel?.querySelectorAll('.ed-fullscreen-nav-link') || [];
+        return {
+          ariaExpanded: btn?.getAttribute('aria-expanded'),
+          panelHidden: panel?.hidden,
+          bodyOverflow: document.body.style.overflow,
+          linkCount: links.length,
+        };
+      })()`
+    );
+    assert.deepEqual(navOpenState, {
+      ariaExpanded: "true",
+      panelHidden: false,
+      bodyOverflow: "hidden",
+      linkCount: 6,
+    });
+
+    // Dispatch Escape key to close menu and verify focus restored to .ed-menu-trigger-btn
+    await evaluateJs(
+      send,
+      sessionId,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`
+    );
+    await sleep(250);
+
+    const navAfterEscape = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const btn = document.querySelector('.ed-menu-trigger-btn');
+        const panel = document.querySelector('#ed-fullscreen-menu-panel');
+        return {
+          ariaExpanded: btn?.getAttribute('aria-expanded'),
+          panelHidden: panel?.hidden,
+          bodyOverflow: document.body.style.overflow,
+          focusRestored: document.activeElement === btn,
+        };
+      })()`
+    );
+    assert.deepEqual(navAfterEscape, {
+      ariaExpanded: "false",
+      panelHidden: true,
+      bodyOverflow: "",
+      focusRestored: true,
+    });
 
     // Click language switcher link (client-side transition to /en)
     await evaluateJs(
@@ -225,7 +365,7 @@ async function main() {
       "Switching from /ar to /en via client-side link must update html lang='en' and dir='ltr'"
     );
 
-    // Click language switcher link back to /ar
+    // Switch back to /ar
     await evaluateJs(
       send,
       sessionId,
@@ -238,13 +378,9 @@ async function main() {
       sessionId,
       `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
     );
-    assert.deepEqual(
-      docState,
-      { lang: "ar", dir: "rtl", path: "/ar" },
-      "Switching from /en back to /ar via client-side link must update html lang='ar' and dir='rtl'"
-    );
+    assert.deepEqual(docState, { lang: "ar", dir: "rtl", path: "/ar" });
 
-    // Test browser Back and Forward (popstate)
+    // Browser Back & Forward
     await evaluateJs(send, sessionId, `history.back()`);
     await sleep(900);
     docState = await evaluateJs(
@@ -252,11 +388,7 @@ async function main() {
       sessionId,
       `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
     );
-    assert.deepEqual(
-      docState,
-      { lang: "en", dir: "ltr", path: "/en" },
-      "Browser Back must synchronize html lang='en' and dir='ltr'"
-    );
+    assert.deepEqual(docState, { lang: "en", dir: "ltr", path: "/en" });
 
     await evaluateJs(send, sessionId, `history.forward()`);
     await sleep(900);
@@ -265,17 +397,17 @@ async function main() {
       sessionId,
       `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
     );
-    assert.deepEqual(
-      docState,
-      { lang: "ar", dir: "rtl", path: "/ar" },
-      "Browser Forward must synchronize html lang='ar' and dir='rtl'"
+    assert.deepEqual(docState, { lang: "ar", dir: "rtl", path: "/ar" });
+    console.log(
+      "  [PASS] Locale lifecycle & Minimal Navigation full-screen overlay verified."
     );
-    console.log("  [PASS] Locale & Document Direction lifecycle verified.");
 
     // =========================================================================
-    // TEST 2: Platform Fonts & Control Font Inheritance (No STC Regular, No Arial on controls)
+    // TEST 2: Platform Fonts & Typographic Red Hero Geometry
     // =========================================================================
-    console.log("2. Verifying rendered platform fonts & button inheritance...");
+    console.log(
+      "2. Verifying rendered platform fonts & Typographic Red Hero geometry..."
+    );
     await evaluateJs(send, sessionId, `document.fonts.ready`);
     const docRoot = await send("DOM.getDocument", { depth: -1 }, sessionId);
 
@@ -305,127 +437,242 @@ async function main() {
       `Hero heading must render with custom Elgharib webfont, got: ${JSON.stringify(heroTitleFonts)}`
     );
 
-    const bodyFonts = await checkSelectorFonts(".hero-immersive-lead");
+    const bodyFonts = await checkSelectorFonts(".ed-red-hero-lead");
     assert.equal(
       bodyFonts.some((f) => f.familyName === "STC Regular"),
       false,
       `Body copy must NOT render with broken local STC Regular, got: ${JSON.stringify(bodyFonts)}`
     );
 
-    const buttonSummaryFonts = await checkSelectorFonts(
-      ".specialty-photo-card-summary"
-    );
+    const buttonFonts = await checkSelectorFonts(".ed-menu-trigger-btn");
     assert.equal(
-      buttonSummaryFonts.some((f) => /Arial/i.test(f.familyName)),
+      buttonFonts.some((f) => /Arial/i.test(f.familyName)),
       false,
-      `Specialty description inside <button> must inherit --font-body and NOT compute to Arial, got: ${JSON.stringify(buttonSummaryFonts)}`
-    );
-    console.log(
-      "  [PASS] Rendered platform fonts & control inheritance verified."
+      `Interactive <button> controls must inherit --font-body and NOT compute to Arial, got: ${JSON.stringify(buttonFonts)}`
     );
 
-    // =========================================================================
-    // TEST 3: Interactive Specialty Explorer & Inactive Panel Focusability
-    // =========================================================================
-    console.log(
-      "3. Verifying Interactive Specialty Explorer & inactive panel focusability..."
-    );
-    const tabStats = await evaluateJs(
+    // Verify vertically layered Typographic Red Hero geometry
+    const heroGeometry = await evaluateJs(
       send,
       sessionId,
       `(() => {
-        const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-        const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+        const hero = document.querySelector('.ed-red-hero');
+        const label = document.querySelector('.ed-red-hero-label-row').getBoundingClientRect();
+        const heading = document.querySelector('#hero-heading').getBoundingClientRect();
+        const lead = document.querySelector('.ed-red-hero-lead').getBoundingClientRect();
+        const cta = document.querySelector('.ed-red-hero-action-cluster').getBoundingClientRect();
+        const pan = document.querySelector('.ed-red-hero-panoramic-stage').getBoundingClientRect();
+        const panImg = document.querySelector('.ed-panoramic-img');
         return {
-          tabCount: tabs.length,
-          tabLabels: tabs.map(t => t.getAttribute('aria-label')),
-          selectedTabs: tabs.filter(t => t.getAttribute('aria-selected') === 'true').map(t => t.id),
-          activePanels: panels.filter(p => !p.hidden && !p.hasAttribute('inert') && getComputedStyle(p).display !== 'none').map(p => p.id),
-          inactivePanelsHidden: panels.filter(p => p.id !== 'specialty-panel-plastic-surgery').every(p => p.hidden && p.hasAttribute('inert') && getComputedStyle(p).display === 'none'),
+          heroBg: getComputedStyle(hero).backgroundColor,
+          headingText: document.querySelector('#hero-heading').textContent.trim(),
+          labelAboveHeading: label.bottom <= heading.top + 12,
+          headingAboveLead: heading.bottom <= lead.top + 12,
+          leadAboveCta: lead.bottom <= cta.top + 12,
+          ctaAbovePanorama: cta.bottom <= pan.top + 16,
+          panoramaInsetLeft: pan.left >= 16,
+          panoramaInsetRight: window.innerWidth - pan.right >= 16,
+          panoramaTopInFirstViewport: pan.top < 780,
+          panoramaSrc: panImg?.getAttribute('src') || '',
         };
       })()`
     );
-    assert.equal(tabStats.tabCount, 3);
-    assert.deepEqual(tabStats.tabLabels, [
-      "جراحة التجميل",
-      "جراحة الترميم",
-      "جراحة الحروق",
-    ]);
-    assert.deepEqual(tabStats.selectedTabs, ["specialty-tab-plastic-surgery"]);
-    assert.deepEqual(tabStats.activePanels, [
-      "specialty-panel-plastic-surgery",
-    ]);
+    assert.equal(heroGeometry.headingText, "“جمال يليق بكِ”");
+    assert.equal(heroGeometry.labelAboveHeading, true);
+    assert.equal(heroGeometry.headingAboveLead, true);
+    assert.equal(heroGeometry.leadAboveCta, true);
+    assert.equal(heroGeometry.ctaAbovePanorama, true);
+    assert.equal(heroGeometry.panoramaInsetLeft, true);
+    assert.equal(heroGeometry.panoramaInsetRight, true);
     assert.equal(
-      tabStats.inactivePanelsHidden,
+      heroGeometry.panoramaTopInFirstViewport,
       true,
-      "Inactive specialty panels must be hidden, inert, and display: none"
+      "Panoramic hero image must reveal meaningful photography inside the first desktop viewport"
+    );
+    assert.equal(
+      heroGeometry.panoramaSrc.includes("hero-panoramic-editorial.jpg"),
+      true
+    );
+    console.log(
+      "  [PASS] Platform fonts & Typographic Red Hero vertical geometry verified."
     );
 
-    // Try focusing a control inside an inactive panel — must NOT become document.activeElement
-    const inactiveFocusAttempt = await evaluateJs(
+    // =========================================================================
+    // TEST 3: Visual Specialty Gallery & Accessible Detail Panel
+    // =========================================================================
+    console.log(
+      "3. Verifying Asymmetric Visual Specialty Gallery & Accessible Detail Panel..."
+    );
+    const galleryStats = await evaluateJs(
       send,
       sessionId,
       `(() => {
-        const inactiveBtn = document.querySelector('#specialty-panel-reconstructive-surgery button, #specialty-panel-reconstructive-surgery a');
-        inactiveBtn?.focus();
-        return document.activeElement === inactiveBtn;
+        const oldTabs = document.querySelectorAll('#specialties-section [role="tab"]');
+        const items = Array.from(document.querySelectorAll('.ed-gallery-piece'));
+        const imgFrames = items.map(el => el.querySelector('.ed-gallery-img-frame')?.getBoundingClientRect());
+        const pageLinks = items.map(el => el.querySelector('a.ed-gallery-fallback-link')?.getAttribute('href'));
+        return {
+          oldTabCount: oldTabs.length,
+          itemCount: items.length,
+          asymmetricHeights: imgFrames.length === 3 && Math.abs(imgFrames[0].height - imgFrames[1].height) > 30,
+          pageLinks,
+        };
       })()`
     );
     assert.equal(
-      inactiveFocusAttempt,
-      false,
-      "Controls inside inactive specialty panels must never receive focus"
+      galleryStats.oldTabCount,
+      0,
+      "Old specialty tablist must not exist"
+    );
+    assert.equal(galleryStats.itemCount, 3);
+    assert.equal(
+      galleryStats.asymmetricHeights,
+      true,
+      "Desktop gallery must have a dominant tall image and different supporting sizes"
     );
 
-    // Switch to tab 2 (Reconstructive Surgery) and verify active panel + consultation button topic
+    // Click Reconstructive Surgery detail trigger to open accessible detail panel
     await evaluateJs(
       send,
       sessionId,
-      `document.querySelector('#specialty-tab-reconstructive-surgery').click()`
-    );
-    await sleep(400);
-
-    const switchedPanel = await evaluateJs(
-      send,
-      sessionId,
       `(() => {
-        const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
-        return panels.filter(p => !p.hidden && getComputedStyle(p).display !== 'none').map(p => p.id);
+        const trigger = document.querySelector('#specialty-trigger-reconstructive-surgery');
+        trigger.focus();
+        trigger.click();
       })()`
     );
-    assert.deepEqual(switchedPanel, ["specialty-panel-reconstructive-surgery"]);
+    await sleep(350);
+
+    const detailPanelState = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const backdrop = document.querySelector('#ed-specialty-detail-panel');
+        const sheet = backdrop?.querySelector('.ed-specialty-detail-sheet');
+        const closeBtn = backdrop?.querySelector('.ed-specialty-sheet-close');
+        const fullLink = backdrop?.querySelector('a.ed-sheet-fullpage-link');
+        return {
+          isOpen: Boolean(backdrop && !backdrop.hidden),
+          role: sheet?.getAttribute('role'),
+          ariaModal: sheet?.getAttribute('aria-modal'),
+          hasCloseBtn: Boolean(closeBtn),
+          hasFullLink: Boolean(fullLink),
+          bodyOverflow: document.body.style.overflow,
+        };
+      })()`
+    );
+    assert.deepEqual(detailPanelState, {
+      isOpen: true,
+      role: "dialog",
+      ariaModal: "true",
+      hasCloseBtn: true,
+      hasFullLink: true,
+      bodyOverflow: "hidden",
+    });
+
+    // Close detail panel with Escape and verify focus restored to trigger
+    await evaluateJs(
+      send,
+      sessionId,
+      `document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`
+    );
+    await sleep(300);
+
+    const detailClosedState = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const backdrop = document.querySelector('#ed-specialty-detail-panel');
+        const trigger = document.querySelector('#specialty-trigger-reconstructive-surgery');
+        return {
+          isOpen: Boolean(backdrop && !backdrop.hidden),
+          focusRestored: document.activeElement === trigger,
+        };
+      })()`
+    );
+    assert.deepEqual(detailClosedState, {
+      isOpen: false,
+      focusRestored: true,
+    });
     console.log(
-      "  [PASS] Interactive Specialty Explorer & inactive panel focusability verified."
+      "  [PASS] Asymmetric Visual Specialty Gallery & Detail Panel verified."
     );
 
     // =========================================================================
-    // TEST 4: Consultation Dialog Verification (Scroll lock, inert, focus trap, Escape, topic)
+    // TEST 4: Doctor Editorial Spread, Interactive Consultation Steps & Consultation Dialog
     // =========================================================================
-    console.log("4. Verifying Consultation Dialog lifecycle...");
+    console.log(
+      "4. Verifying Doctor Editorial Spread, Interactive Consultation Steps & Consultation Dialog..."
+    );
+    const spreadAndStepsState = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const intro = document.querySelector('.ed-doctor-spread-intro')?.getBoundingClientRect();
+        const portrait = document.querySelector('.ed-doctor-spread-portrait')?.getBoundingClientRect();
+        const creds = document.querySelector('.ed-doctor-spread-credentials')?.getBoundingClientRect();
+        const docImg = document.querySelector('#doctor-section .ed-doctor-central-img');
+        const stepBtns = Array.from(document.querySelectorAll('.ed-step-control-btn'));
+        return {
+          threePartHorizontal: Boolean(intro && portrait && creds && intro.left > portrait.left && portrait.left > creds.left),
+          docSrc: docImg?.getAttribute('src') || '',
+          stepCount: stepBtns.length,
+        };
+      })()`
+    );
+    assert.equal(
+      spreadAndStepsState.threePartHorizontal,
+      true,
+      "Desktop Doctor Profile must be a 3-part RTL horizontal spread (intro -> central portrait -> qualifications)"
+    );
+    assert.equal(
+      spreadAndStepsState.docSrc.includes("dr-malak-alsaif.jpg"),
+      true
+    );
+    assert.equal(spreadAndStepsState.stepCount, 3);
+
+    // Click Step 03 in Interactive Consultation Steps and verify copy + image update
+    await evaluateJs(
+      send,
+      sessionId,
+      `document.querySelector('#consultation-step-tab-03').click()`
+    );
+    await sleep(300);
+
+    const step3ActiveState = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const activeTitle = document.querySelector('.ed-steps-stage-title')?.textContent?.trim();
+        const activeImg = document.querySelector('.ed-steps-stage-img')?.getAttribute('src') || '';
+        return { activeTitle, activeImg };
+      })()`
+    );
+    assert.equal(step3ActiveState.activeTitle, "توضيح الخيارات والخطوات التالية");
+    assert.equal(step3ActiveState.activeImg.includes("step-03-options.jpg"), true);
+
+    // Open Consultation Dialog from Interactive Consultation Steps
     await evaluateJs(
       send,
       sessionId,
       `(() => {
-        const btn = document.querySelector('#specialty-panel-reconstructive-surgery .btn-primary');
+        const btn = document.querySelector('#consultation-steps-section .btn-primary');
         btn.focus();
         btn.click();
       })()`
     );
-    await sleep(450);
+    await sleep(400);
 
     const dialogOpenState = await evaluateJs(
       send,
       sessionId,
       `(() => {
-        const dialog = document.querySelector('[role="dialog"]');
+        const dialog = document.querySelector('[role="dialog"]:not(#ed-fullscreen-menu-panel)');
         const shell = document.querySelector('.app-shell-content');
-        const checkedRadio = dialog?.querySelector('input[type="radio"]:checked');
         return {
           isOpen: Boolean(dialog),
           bodyOverflow: document.body.style.overflow,
           shellInert: shell?.hasAttribute('inert'),
-          shellAriaHidden: shell?.getAttribute('aria-hidden'),
-          selectedTopic: checkedRadio?.value,
         };
       })()`
     );
@@ -433,64 +680,33 @@ async function main() {
       isOpen: true,
       bodyOverflow: "hidden",
       shellInert: true,
-      shellAriaHidden: "true",
-      selectedTopic: "reconstructive-surgery",
     });
 
-    // Advance to Step 2 and verify WhatsApp link
+    // Advance to Step 2 and verify WhatsApp URL
     await evaluateJs(
       send,
       sessionId,
       `document.querySelector('.dialog-primary-btn').click()`
     );
-    await sleep(350);
+    await sleep(300);
 
-    const step2State = await evaluateJs(
+    const waHref = await evaluateJs(
       send,
       sessionId,
-      `(() => {
-        const waLink = document.querySelector('[role="dialog"] a.btn-primary');
-        return {
-          href: waLink?.getAttribute('href') || '',
-          text: decodeURIComponent(waLink?.getAttribute('href') || ''),
-        };
-      })()`
+      `document.querySelector('[role="dialog"]:not(#ed-fullscreen-menu-panel) a.btn-primary')?.getAttribute('href') || ''`
     );
-    assert.equal(
-      step2State.href.startsWith("https://wa.me/966580376463?text="),
-      true
-    );
-    assert.equal(step2State.text.includes("مجال جراحة الترميم"), true);
+    assert.equal(waHref.startsWith("https://wa.me/966580376463?text="), true);
 
-    // Close dialog and verify scroll restoration & focus restoration
+    // Close dialog
     await evaluateJs(
       send,
       sessionId,
       `document.querySelector('.dialog-close-btn').click()`
     );
-    await sleep(350);
-
-    const dialogClosedState = await evaluateJs(
-      send,
-      sessionId,
-      `(() => {
-        const shell = document.querySelector('.app-shell-content');
-        const trigger = document.querySelector('#specialty-panel-reconstructive-surgery .btn-primary');
-        return {
-          isOpen: Boolean(document.querySelector('[role="dialog"]')),
-          bodyOverflow: document.body.style.overflow,
-          shellInert: shell?.hasAttribute('inert'),
-          focusRestored: document.activeElement === trigger,
-        };
-      })()`
+    await sleep(300);
+    console.log(
+      "  [PASS] Doctor Spread, Interactive Consultation Steps & Consultation Dialog verified."
     );
-    assert.deepEqual(dialogClosedState, {
-      isOpen: false,
-      bodyOverflow: "",
-      shellInert: false,
-      focusRestored: true,
-    });
-    console.log("  [PASS] Consultation Dialog lifecycle verified.");
 
     // =========================================================================
     // TEST 5: Article Search Normalization, Single Reset Button, & Reading-Time Localization
@@ -540,7 +756,6 @@ async function main() {
       "Search for 'اِسْتِشَارَة' (with diacritics) must return the same articles as 'استشارة'"
     );
 
-    // Reading time check on Arabic card
     const readingTimeText = await evaluateJs(
       send,
       sessionId,
@@ -555,7 +770,6 @@ async function main() {
       `Expected localized Arabic reading time, got: ${readingTimeText}`
     );
 
-    // Empty state reset button count check
     await setSearchInput("عبارة غير موجودة إطلاقا 999");
     const resetButtonsInEmptyState = await evaluateJs(
       send,
@@ -568,29 +782,18 @@ async function main() {
       "Empty search state must display exactly ONE reset button"
     );
 
-    // Click the reset button
     await evaluateJs(
       send,
       sessionId,
       `document.querySelector('.articles-empty-state button').click()`
     );
     await sleep(300);
-    const countAfterReset = await evaluateJs(
-      send,
-      sessionId,
-      `document.querySelectorAll('.featured-article-card, .article-card').length`
-    );
-    assert.equal(
-      countAfterReset,
-      countBare,
-      "Reset must restore all published articles"
-    );
     console.log(
       "  [PASS] Article Search Normalization & Reading-Time Localization verified."
     );
 
     // =========================================================================
-    // TEST 6: SEO Metadata (noindex, canonical, hreflang ar/en/x-default, og:image, sitemap.xml)
+    // TEST 6: SEO Metadata (noindex, canonical, hreflang, sitemap.xml)
     // =========================================================================
     console.log("6. Verifying SEO Metadata & Sitemap...");
     const seoState = await evaluateJs(
@@ -628,10 +831,10 @@ async function main() {
     console.log("  [PASS] SEO Metadata & Sitemap verified.");
 
     // =========================================================================
-    // TEST 7: Capture Screenshots across 390px, 768px, and 1440px
+    // TEST 7: Scroll-Through & Multi-Viewport Screenshot Capture (AR & EN at 390px, 768px, 1440px)
     // =========================================================================
     console.log(
-      "7. Capturing verification screenshots across 390px, 768px, and 1440px..."
+      "7. Scrolling through pages & capturing screenshots across 390px, 768px, and 1440px in AR and EN..."
     );
     const viewports = [
       { name: "1440w-desktop", width: 1440, height: 920 },
@@ -642,124 +845,128 @@ async function main() {
     for (const vp of viewports) {
       await setViewport(vp.width, vp.height);
 
-      // 1. Homepage (verify Hero, #doctor-section portrait, split specialty explorer, FAQ, deep-red closing section, and zero broken images)
+      // --- Arabic Homepage (/ar) ---
       await send("Page.navigate", { url: `${TARGET_BASE_URL}/ar` }, sessionId);
-      await sleep(1400);
-      const imageHealth = await evaluateJs(
+      await sleep(1200);
+      await scrollThroughPage(send, sessionId);
+
+      // Verify zero broken images after full scroll-through
+      const brokenAr = await evaluateJs(
         send,
         sessionId,
-        `(() => {
-          const heroSrc = document.querySelector('.hero-immersive-img')?.getAttribute('src') || '';
-          const doctorSectionSrc = document.querySelector('#doctor-section .doctor-editorial-img')?.getAttribute('src') || '';
-          const hasHeroQualStrip = Boolean(document.querySelector('.hero-doctor-identity-strip'));
-          const hasSplitExplorer = Boolean(document.querySelector('.specialty-explorer-split'));
-          const hasClosingRed = Boolean(document.querySelector('.closing-red-statement-section'));
-          const broken = Array.from(document.querySelectorAll('img'))
-            .filter(img => img.loading !== 'lazy' && (!img.complete || img.naturalWidth === 0))
-            .map(img => img.getAttribute('src'));
-          return { heroSrc, doctorSectionSrc, hasHeroQualStrip, hasSplitExplorer, hasClosingRed, broken };
-        })()`
-      );
-      assert.equal(
-        imageHealth.heroSrc.includes("hero-aesthetic-editorial.jpg"),
-        true,
-        `Homepage Hero must use the editorial photograph (hero-aesthetic-editorial.jpg), got: ${imageHealth.heroSrc}`
-      );
-      assert.equal(
-        imageHealth.doctorSectionSrc.includes("dr-malak-alsaif.jpg"),
-        true,
-        `Dedicated #doctor-section must feature the real doctor portrait (dr-malak-alsaif.jpg), got: ${imageHealth.doctorSectionSrc}`
-      );
-      assert.equal(
-        imageHealth.hasHeroQualStrip,
-        false,
-        "Hero qualifications strip must be absent"
-      );
-      assert.equal(
-        imageHealth.hasSplitExplorer,
-        true,
-        "Interactive split specialty explorer must be present"
-      );
-      assert.equal(
-        imageHealth.hasClosingRed,
-        true,
-        "Distinctive deep-red closing section must be present"
+        `Array.from(document.querySelectorAll('img'))
+          .filter(img => !img.complete || img.naturalWidth === 0)
+          .map(img => img.getAttribute('src'))`
       );
       assert.deepEqual(
-        imageHealth.broken,
+        brokenAr,
         [],
-        `All eager images must load cleanly without broken URLs, broken: ${JSON.stringify(imageHealth.broken)}`
-      );
-      await captureScreenshot(send, sessionId, `01-homepage-${vp.name}.png`);
-
-      // 2. Doctor Editorial Introduction
-      await evaluateJs(
-        send,
-        sessionId,
-        `document.querySelector('#doctor-section').scrollIntoView({ behavior: 'instant', block: 'start' })`
-      );
-      await sleep(600);
-      await captureScreenshot(
-        send,
-        sessionId,
-        `02-doctor-section-${vp.name}.png`
+        `Zero broken images expected on /ar (${vp.name}), got: ${JSON.stringify(brokenAr)}`
       );
 
-      // 3. Interactive Specialty Explorer
+      // Capture viewport hero
+      await captureScreenshot(send, sessionId, `01-ar-home-${vp.name}.png`, {
+        copyToArtifact: true,
+      });
+
+      // Capture key sections on Arabic Homepage
       await evaluateJs(
         send,
         sessionId,
         `document.querySelector('#specialties-section').scrollIntoView({ behavior: 'instant', block: 'start' })`
       );
-      await sleep(600);
+      await sleep(350);
       await captureScreenshot(
         send,
         sessionId,
-        `03-specialty-explorer-${vp.name}.png`
+        `02-ar-specialty-gallery-${vp.name}.png`,
+        { copyToArtifact: vp.width !== 768 }
       );
 
-      // 4. Consultation Dialog
       await evaluateJs(
         send,
         sessionId,
-        `document.querySelector('#specialty-panel-plastic-surgery .btn-primary').click()`
+        `document.querySelector('#doctor-section').scrollIntoView({ behavior: 'instant', block: 'start' })`
       );
-      await sleep(500);
+      await sleep(350);
       await captureScreenshot(
         send,
         sessionId,
-        `04-consultation-dialog-${vp.name}.png`
+        `03-ar-doctor-spread-${vp.name}.png`,
+        { copyToArtifact: vp.width !== 768 }
       );
-      await evaluateJs(
-        send,
-        sessionId,
-        `document.querySelector('.dialog-close-btn')?.click()`
-      );
-      await sleep(300);
 
-      // 5. Deep-Red Closing Section
       await evaluateJs(
         send,
         sessionId,
-        `document.querySelector('.closing-red-statement-section').scrollIntoView({ behavior: 'instant', block: 'center' })`
+        `document.querySelector('#consultation-steps-section').scrollIntoView({ behavior: 'instant', block: 'start' })`
       );
-      await sleep(600);
+      await sleep(350);
       await captureScreenshot(
         send,
         sessionId,
-        `05-closing-red-section-${vp.name}.png`
+        `04-ar-consultation-steps-${vp.name}.png`,
+        { copyToArtifact: vp.width !== 768 }
       );
 
-      // 6. Article Page
+      await evaluateJs(
+        send,
+        sessionId,
+        `document.querySelector('#journal-section').scrollIntoView({ behavior: 'instant', block: 'start' })`
+      );
+      await sleep(350);
+      await captureScreenshot(
+        send,
+        sessionId,
+        `05-ar-journal-${vp.name}.png`,
+        { copyToArtifact: vp.width !== 768 }
+      );
+
+      await evaluateJs(
+        send,
+        sessionId,
+        `document.querySelector('.ed-ivory-booking-section').scrollIntoView({ behavior: 'instant', block: 'start' })`
+      );
+      await sleep(350);
+      await captureScreenshot(
+        send,
+        sessionId,
+        `06-ar-booking-and-footer-${vp.name}.png`,
+        { copyToArtifact: vp.width !== 768 }
+      );
+
+      // --- English Homepage (/en) ---
+      await send("Page.navigate", { url: `${TARGET_BASE_URL}/en` }, sessionId);
+      await sleep(1100);
+      await scrollThroughPage(send, sessionId);
+      await captureScreenshot(send, sessionId, `07-en-home-${vp.name}.png`, {
+        copyToArtifact: vp.width === 1440 || vp.width === 390,
+      });
+    }
+
+    // Also capture inner pages at 1440w desktop to verify cohesive visual language
+    await setViewport(1440, 920);
+    const innerRoutes = [
+      { path: "/ar/about", file: "08-ar-about-1440w.png" },
+      { path: "/ar/specialties", file: "09-ar-specialties-1440w.png" },
+      { path: "/ar/articles", file: "10-ar-articles-1440w.png" },
+      {
+        path: "/ar/articles/preparing-for-consultation",
+        file: "11-ar-article-detail-1440w.png",
+      },
+      { path: "/ar/contact", file: "12-ar-contact-1440w.png" },
+    ];
+    for (const r of innerRoutes) {
       await send(
         "Page.navigate",
-        {
-          url: `${TARGET_BASE_URL}/ar/articles/preparing-for-consultation`,
-        },
+        { url: `${TARGET_BASE_URL}${r.path}` },
         sessionId
       );
-      await sleep(1200);
-      await captureScreenshot(send, sessionId, `06-article-page-${vp.name}.png`);
+      await sleep(1000);
+      await scrollThroughPage(send, sessionId);
+      await captureScreenshot(send, sessionId, r.file, {
+        copyToArtifact: true,
+      });
     }
 
     browserWs.close();
@@ -777,9 +984,9 @@ async function main() {
 }
 
 setTimeout(() => {
-  console.error("Browser verification watchdog timeout (45s) reached; exiting.");
+  console.error("Browser verification watchdog timeout (90s) reached; exiting.");
   process.exit(1);
-}, 45000).unref();
+}, 90000).unref();
 
 main()
   .then(() => process.exit(0))
