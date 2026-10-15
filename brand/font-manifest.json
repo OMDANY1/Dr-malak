@@ -1,0 +1,53 @@
+{
+  "status": "elgharib-supplied-stc-pending",
+  "families": [
+    {
+      "name": "alghraib",
+      "source": "Owner supplied ELGHARIB FONT.rar",
+      "files": [
+        {
+          "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Black.otf",
+          "weight": 900,
+          "style": "normal",
+          "internalFamily": "Elgharib-",
+          "internalSubfamily": "Tajarib-Taweel Black"
+        },
+        {
+          "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Bold.otf",
+          "weight": 700,
+          "style": "normal",
+          "internalFamily": "Elgharib-",
+          "internalSubfamily": "Tajarib-Taweel Bold"
+        },
+        {
+          "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Light.otf",
+          "weight": 300,
+          "style": "normal",
+          "internalFamily": "Elgharib-",
+          "internalSubfamily": "Tajarib-Taweel Light"
+        },
+        {
+          "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Medium.otf",
+          "weight": 500,
+          "style": "normal",
+          "internalFamily": "Elgharib-",
+          "internalSubfamily": "Tajarib-Taweel Medium"
+        },
+        {
+          "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Regular.otf",
+          "weight": 400,
+          "style": "normal",
+          "internalFamily": "Elgharib-",
+          "internalSubfamily": "Tajarib-Taweel Regular"
+        }
+      ],
+      "webLicense": "separate-document-not-provided"
+    },
+    {
+      "name": "STC",
+      "files": [],
+      "status": "missing",
+      "fallback": "system-ui, sans-serif"
+    }
+  ]
+}

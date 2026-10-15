@@ -1,0 +1,48 @@
+{
+  "id": "en-preparing-for-consultation",
+  "locale": "en",
+  "slug": "preparing-for-consultation",
+  "translationKey": "preparing-for-consultation",
+  "title": "How to Prepare for a Plastic Surgery Consultation",
+  "description": "A general organizational guide to help you gather your thoughts and essential health details before attending an in-person medical consultation.",
+  "category": "consultation-prep",
+  "coverImage": "/images/generated/article-consultation-prep.jpg",
+  "coverAlt": "An ivory notebook with blank pages, a minimal pen, and a deep-red folder on a calm desk surface",
+  "status": "published",
+  "authorName": "General Organizational Guide — Dr. Malak Alsaif Website",
+  "publishedAt": null,
+  "updatedAt": null,
+  "reviewedBy": null,
+  "reviewedAt": null,
+  "body": [
+    {
+      "id": "defining-personal-goals",
+      "heading": "Clarifying Your Priorities for the Visit",
+      "paragraphs": [
+        "A medical consultation offers a private, unhurried setting to discuss your concerns directly. Before your appointment, it can be helpful to note your primary reasons for visiting and what you hope to clarify during the conversation.",
+        "Outlining your priorities in advance helps keep the discussion focused on what matters most to you."
+      ]
+    },
+    {
+      "id": "organizing-medical-history",
+      "heading": "Gathering Essential Health Information",
+      "paragraphs": [
+        "An accurate clinical assessment relies on a clear understanding of your overall health background. Prepare a concise summary of any current or past medical conditions as well as prior surgical procedures.",
+        "It is also helpful to bring an updated list of regular medications, supplements, and any known allergies."
+      ],
+      "listItems": [
+        "A current list of daily medications or ongoing treatments.",
+        "Details of any relevant prior surgeries or clinical procedures.",
+        "Any medical records or test results requested when coordinating your appointment."
+      ]
+    },
+    {
+      "id": "writing-down-questions",
+      "heading": "Preparing Your Questions in Advance",
+      "paragraphs": [
+        "It is natural to have practical and clinical questions before meeting the doctor. Writing them down in a notebook ensures that important points are covered comfortably during your appointment.",
+        "Remember that an initial consultation is intended to evaluate your individual needs and explain available options objectively, without pressure to make an immediate decision."
+      ]
+    }
+  ]
+}

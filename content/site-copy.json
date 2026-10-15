@@ -1,0 +1,126 @@
+{
+  "ar": {
+    "nav": {
+      "home": "الرئيسية",
+      "about": "عن الدكتورة",
+      "specialties": "مجالات التخصص",
+      "contact": "تواصل معنا"
+    },
+    "hero": {
+      "eyebrow": "د. ملاك السيف",
+      "title": "قرارك يبدأ بفهم احتياجك",
+      "subtitle": "جراحة التجميل والترميم",
+      "body": "تعرّفي على مجالات التخصص، وخذي خطوتك الأولى نحو استشارة تناقش احتياجك والخيارات المناسبة لحالتك.",
+      "primary": "تواصلي لحجز استشارة",
+      "secondary": "تعرّفي على الدكتورة"
+    },
+    "about": "د. ملاك السيف، طبيبة في مجال جراحة التجميل والترميم، حاصلة على البورد السعودي لجراحة التجميل وبكالوريوس الطب والجراحة من جامعة الملك سعود بن عبدالعزيز للعلوم الصحية في الرياض.",
+    "credentials": [
+      "البورد السعودي لجراحة التجميل — برنامج مستشفى الحرس الوطني",
+      "بكالوريوس الطب والجراحة — جامعة الملك سعود بن عبدالعزيز للعلوم الصحية",
+      "عضوية الجمعية الأمريكية لجراحة التجميل والترميم، بحسب الملف التعريفي للمستشفى"
+    ],
+    "specialties": [
+      {
+        "title": "جراحة التجميل",
+        "body": "مجال يهتم بالجوانب الجمالية، وتُناقش الخيارات المناسبة بعد تقييم الحالة وتوقعاتها."
+      },
+      {
+        "title": "جراحة الترميم",
+        "body": "مجال يهتم بترميم الأنسجة واستعادة الشكل والوظيفة وفق احتياج كل حالة."
+      },
+      {
+        "title": "جراحة الحروق",
+        "body": "تقييم الحالات المرتبطة بالحروق وآثارها ومناقشة الخيارات المناسبة لكل حالة."
+      }
+    ],
+    "journey": [
+      "طلب التواصل",
+      "مناقشة الاحتياج والتقييم",
+      "توضيح الخيارات والخطوات التالية"
+    ],
+    "faq": [
+      {
+        "q": "كيف أطلب استشارة؟",
+        "a": "يمكنكِ التواصل عبر واتساب على رقم التنسيق الظاهر بالموقع للاستفسار عن ترتيب الاستشارة."
+      },
+      {
+        "q": "هل رسالة واتساب تعني تأكيد الموعد؟",
+        "a": "لا. التواصل يبدأ طلب التنسيق، ويُؤكَّد الموعد بعد الاتفاق مع الجهة المسؤولة عن الحجز."
+      },
+      {
+        "q": "كيف أستعد للاستشارة؟",
+        "a": "جهّزي أسئلتكِ، واستفسري عند تنسيق الموعد عن المعلومات أو المستندات المطلوبة."
+      }
+    ],
+    "contactTitle": "لديكِ أسئلة قبل اتخاذ القرار؟",
+    "contactBody": "تواصلي للاستفسار عن الاستشارة والخطوة التالية. التواصل لا يعني تأكيد الموعد.",
+    "whatsappMessage": "مرحبًا، أرغب في الاستفسار عن حجز استشارة مع د. ملاك السيف.",
+    "call": "اتصال",
+    "instagram": "زيارة إنستجرام",
+    "privacy": "الخصوصية",
+    "disclaimer": "المحتوى للتعريف والتوعية العامة، ولا يغني عن التقييم الطبي الفردي."
+  },
+  "en": {
+    "nav": {
+      "home": "Home",
+      "about": "About",
+      "specialties": "Areas of practice",
+      "contact": "Contact"
+    },
+    "hero": {
+      "eyebrow": "Dr. Malak Alsaif",
+      "title": "An informed decision starts with understanding your needs",
+      "subtitle": "Plastic & Reconstructive Surgery",
+      "body": "Explore the areas of practice and take the first step toward a consultation about your needs and available options.",
+      "primary": "Enquire about a consultation",
+      "secondary": "Meet the doctor"
+    },
+    "about": "Dr. Malak Alsaif practices plastic and reconstructive surgery. Her hospital profile lists the Saudi Board in Plastic Surgery and a medical degree from King Saud bin Abdulaziz University for Health Sciences in Riyadh.",
+    "credentials": [
+      "Saudi Board in Plastic Surgery — National Guard Hospital program",
+      "Medical degree — King Saud bin Abdulaziz University for Health Sciences",
+      "American Society of Plastic Surgeons membership, as listed by the hospital"
+    ],
+    "specialties": [
+      {
+        "title": "Plastic surgery",
+        "body": "A field addressing aesthetic concerns, with options discussed following an individual assessment."
+      },
+      {
+        "title": "Reconstructive surgery",
+        "body": "A field focused on tissue reconstruction and the restoration of form and function according to individual needs."
+      },
+      {
+        "title": "Burn surgery",
+        "body": "Assessment of burn-related concerns and their effects, with options discussed for each individual case."
+      }
+    ],
+    "journey": [
+      "Get in touch",
+      "Discuss your needs and assessment",
+      "Understand the options and next steps"
+    ],
+    "faq": [
+      {
+        "q": "How do I enquire about a consultation?",
+        "a": "Use the WhatsApp coordination number shown on the website to ask about arranging a consultation."
+      },
+      {
+        "q": "Does a WhatsApp message confirm an appointment?",
+        "a": "No. A message starts the coordination process. The appointment is confirmed separately by the booking contact."
+      },
+      {
+        "q": "How can I prepare?",
+        "a": "Prepare your questions and ask the booking contact which information or documents to bring."
+      }
+    ],
+    "contactTitle": "Questions before making a decision?",
+    "contactBody": "Get in touch to enquire about a consultation and the next step. Contacting us does not confirm an appointment.",
+    "whatsappMessage": "Hello, I would like to enquire about booking a consultation with Dr. Malak Alsaif.",
+    "call": "Call",
+    "instagram": "Visit Instagram",
+    "privacy": "Privacy",
+    "disclaimer": "This content is for general information and does not replace an individual medical assessment."
+  }
+}

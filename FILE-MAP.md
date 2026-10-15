@@ -1,0 +1,46 @@
+# File map
+
+- `AGENTS.md`
+- `MASTER-PROMPT.md`
+- `README-AR.md`
+- `START-HERE.md`
+- `agents/01-creative-director.md`
+- `agents/02-implementation.md`
+- `agents/03-review.md`
+- `brand/ASSET-REGISTER.md`
+- `brand/BRAND.md`
+- `brand/TYPOGRAPHY.md`
+- `brand/font-manifest.json`
+- `brand/logo-reference/malak-logo-reference-only.png`
+- `brand/references/art-direction.png`
+- `brand/references/social-preview.png`
+- `content/site-config.json`
+- `content/site-copy.json`
+- `docs/01-BRIEF.md`
+- `docs/02-SOURCES-AND-FACTS.md`
+- `docs/03-ROUTES.md`
+- `docs/04-CONTENT.md`
+- `docs/05-UX-AND-COMPONENTS.md`
+- `docs/06-IMPLEMENTATION.md`
+- `docs/07-QA.md`
+- `docs/08-HANDOFF.md`
+- `public/brand/README.md`
+- `public/fonts/alghraib/README.md`
+- `public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Black.otf`
+- `public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Bold.otf`
+- `public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Light.otf`
+- `public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Medium.otf`
+- `public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Regular.otf`
+- `public/fonts/stc/README.md`
+- `public/images/clinic/README.md`
+- `public/images/doctor/README.md`
+- `src/app/[locale]/ROUTE.md`
+- `src/app/[locale]/about/ROUTE.md`
+- `src/app/[locale]/contact/ROUTE.md`
+- `src/app/[locale]/privacy/ROUTE.md`
+- `src/app/[locale]/specialties/ROUTE.md`
+- `styles/fonts.css`
+- `styles/fonts.template.css`
+- `styles/tokens.css`
+
+MANIFEST.json contains integrity checksums. Five Elgharib OTF files included. STC pending.

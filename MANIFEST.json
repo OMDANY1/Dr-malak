@@ -1,0 +1,227 @@
+{
+  "kitVersion": "1.1",
+  "fontBinariesIncluded": true,
+  "fontFamiliesIncluded": [
+    "Elgharib Tajarib Taweel"
+  ],
+  "fontFamiliesMissing": [
+    "STC"
+  ],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 1255,
+      "sha256": "d31c209a9bc9404e2e5e8349f46e4313e5f81ef3272423f0918f11eead5c7aee"
+    },
+    {
+      "path": "FILE-MAP.md",
+      "bytes": 1536,
+      "sha256": "cf5150454727b74da0a6d9f6b75219459a5be72f834dd238e4cb7d7016daa432"
+    },
+    {
+      "path": "MASTER-PROMPT.md",
+      "bytes": 8895,
+      "sha256": "9710fb5469656723fb8c4685523efbb7296a8b276791256a9328eb6e24dfb593"
+    },
+    {
+      "path": "README-AR.md",
+      "bytes": 2488,
+      "sha256": "81fe157124baab09ff98b6a4e1eb9bdcd63d2734b1090bafe0b3f90ffa6e591b"
+    },
+    {
+      "path": "START-HERE.md",
+      "bytes": 446,
+      "sha256": "9c86862665c07a5e15e4bbf15aa4d0ebb9693ae8e3f36ee83e28cc665e964efb"
+    },
+    {
+      "path": "agents/01-creative-director.md",
+      "bytes": 417,
+      "sha256": "1804bc4e5d84656802c62caff8cfd64ce60a42a2038c30a965637f6f3df210ab"
+    },
+    {
+      "path": "agents/02-implementation.md",
+      "bytes": 340,
+      "sha256": "c69a8d4dd5366dbb50d6534b75c5a1732add47ba3f625c6fd4d837574f0ba8a8"
+    },
+    {
+      "path": "agents/03-review.md",
+      "bytes": 313,
+      "sha256": "fc3bb35244247a239afdff85b83bba99e43f79bf6a5548591968f799b8663fc1"
+    },
+    {
+      "path": "brand/ASSET-REGISTER.md",
+      "bytes": 1366,
+      "sha256": "99fafbf8fe1c5218f973de2db585136898391cbd8957132f6f947367f10f0f6b"
+    },
+    {
+      "path": "brand/BRAND.md",
+      "bytes": 1241,
+      "sha256": "7acd43d962e02c223c699ae89bd25ef0fe61430f18addf834b78b0a28fe1f7ee"
+    },
+    {
+      "path": "brand/TYPOGRAPHY.md",
+      "bytes": 1203,
+      "sha256": "3615f146a9a0529de93003ea544791af26a8e07009e894b3b45259756f9a62c9"
+    },
+    {
+      "path": "brand/font-manifest.json",
+      "bytes": 1652,
+      "sha256": "f315050eb416df4340f0d62ed6f125786514325483f5fbd366123beefb5b2845"
+    },
+    {
+      "path": "brand/logo-reference/malak-logo-reference-only.png",
+      "bytes": 380033,
+      "sha256": "ce282748e78a9ebd8abb7d24ec96abbec90389e6961b1d905be65dee1838e349"
+    },
+    {
+      "path": "brand/references/art-direction.png",
+      "bytes": 1794143,
+      "sha256": "2718275f3baa414cde9beb11d5cd86313d458a8b7966a0f3fd492b10744de23e"
+    },
+    {
+      "path": "brand/references/social-preview.png",
+      "bytes": 854853,
+      "sha256": "4ebdd299e017f9a71d75c70eac85ac1367f0f2d563a822a65d4bdc718353e4c8"
+    },
+    {
+      "path": "content/site-config.json",
+      "bytes": 527,
+      "sha256": "662ac74dc22f5290883ab46a1866abd1f5c0fb270dcca7155d0f34574b2278a0"
+    },
+    {
+      "path": "content/site-copy.json",
+      "bytes": 6549,
+      "sha256": "3d91ae186393e6bbc8082c3421d96ed85bf7fb7c75f7bd52513df156f96bc4e6"
+    },
+    {
+      "path": "docs/01-BRIEF.md",
+      "bytes": 730,
+      "sha256": "045409f6fa71efeeaa1a2d47b6a763e9686de0fa8f4b02e88e66ec1b4ec455f5"
+    },
+    {
+      "path": "docs/02-SOURCES-AND-FACTS.md",
+      "bytes": 1832,
+      "sha256": "a3aaed845a0c08e9410706781ae73e9635933b42e9ea21a677f1e73250bb2432"
+    },
+    {
+      "path": "docs/03-ROUTES.md",
+      "bytes": 1018,
+      "sha256": "fd903c6fe873232c1fc0781df4ef3840fb46708607f87eaee9f2eab5f13356db"
+    },
+    {
+      "path": "docs/04-CONTENT.md",
+      "bytes": 973,
+      "sha256": "cb6c79b29200e51f50289aa110492b483dc24a8b1c222cf18fa7b5c48e68e7d5"
+    },
+    {
+      "path": "docs/05-UX-AND-COMPONENTS.md",
+      "bytes": 1334,
+      "sha256": "c86328f53e5e902a042d13a71d0f3c0cb0c48b10855e5b4f1d330b41882caaa2"
+    },
+    {
+      "path": "docs/06-IMPLEMENTATION.md",
+      "bytes": 1667,
+      "sha256": "841fb0cec9ef81f3a30ccce1699b74d04255aa27fa2c87f523ab1432a090175f"
+    },
+    {
+      "path": "docs/07-QA.md",
+      "bytes": 1482,
+      "sha256": "22c6477c10312beb5dd97d079fa8f692db8c4fcbace0a482f866c8688b78e0b6"
+    },
+    {
+      "path": "docs/08-HANDOFF.md",
+      "bytes": 959,
+      "sha256": "58a68423d959f3210d4880f3083249a5906359a09a7d37a6585999f6b39add52"
+    },
+    {
+      "path": "public/brand/README.md",
+      "bytes": 111,
+      "sha256": "b2091f58482049dea6f211d05cc8cbdc53744983784de4ee9e5f3bc94c85d194"
+    },
+    {
+      "path": "public/fonts/alghraib/README.md",
+      "bytes": 927,
+      "sha256": "8a21ecaa0c09fa56a098929112c0c5de50ba7d30b102712db190c7d4199b1758"
+    },
+    {
+      "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Black.otf",
+      "bytes": 61136,
+      "sha256": "af853fde66ca76597bc18c368533e346427610d2913389b3cf0c74c38d0b37d8"
+    },
+    {
+      "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Bold.otf",
+      "bytes": 63860,
+      "sha256": "ca226453e9c90898ade8ae7307bc0c2816551d04bc28532bee2ac0d91a07facb"
+    },
+    {
+      "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Light.otf",
+      "bytes": 59944,
+      "sha256": "b88e5987d5af6fbd299dfce3a84a4ac90ee5971d8549dd88c8c1ba7ebc8176df"
+    },
+    {
+      "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Medium.otf",
+      "bytes": 62848,
+      "sha256": "772f4aa395aee23d7b1984c87f3f71a28c53175264dd09f38aa70987f724369f"
+    },
+    {
+      "path": "public/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Regular.otf",
+      "bytes": 63816,
+      "sha256": "6fd50ca201c9295a9223c10b2f89c9b27fe9ca66bf66ca5e5ddafff0677deacd"
+    },
+    {
+      "path": "public/fonts/stc/README.md",
+      "bytes": 306,
+      "sha256": "6b9a9a5726411aadcfa3e7b4e40c488726b359ad5d0b5c13b02463fe8e0e39a8"
+    },
+    {
+      "path": "public/images/clinic/README.md",
+      "bytes": 74,
+      "sha256": "1016a8cf883f6f9c326e44d7c7c2d283179899d828b21df2be642f8ea8f13608"
+    },
+    {
+      "path": "public/images/doctor/README.md",
+      "bytes": 106,
+      "sha256": "f755967ee46ac42e3a50a9b71246f9669b6842e247367b14a4ec2a07f4ca9584"
+    },
+    {
+      "path": "src/app/[locale]/ROUTE.md",
+      "bytes": 509,
+      "sha256": "7c1dda43a0e0bcf535f0db204ce3f01dab9ca579211bb1ee9361118a2796eaa9"
+    },
+    {
+      "path": "src/app/[locale]/about/ROUTE.md",
+      "bytes": 512,
+      "sha256": "2c8906e182d4889a67288e38b1b1967d3769401805e6683acde8e347f90969c1"
+    },
+    {
+      "path": "src/app/[locale]/contact/ROUTE.md",
+      "bytes": 524,
+      "sha256": "b26daccea157f29d5e1268828712694a158c9a580c70a18d5c3d312eb52cd7bf"
+    },
+    {
+      "path": "src/app/[locale]/privacy/ROUTE.md",
+      "bytes": 614,
+      "sha256": "14ecd588f8194764d45e77f4e0054be91f6f6322c12b7fe0ead7762536d77f8f"
+    },
+    {
+      "path": "src/app/[locale]/specialties/ROUTE.md",
+      "bytes": 568,
+      "sha256": "003d376e51ab6a29ff221e726740f84955256e14434e879e1b0fabec91c3d4c5"
+    },
+    {
+      "path": "styles/fonts.css",
+      "bytes": 1011,
+      "sha256": "bd4103cdd1c2f846f066dfc0a8aa0098624c3fd02253825a0679c17610275cbf"
+    },
+    {
+      "path": "styles/fonts.template.css",
+      "bytes": 213,
+      "sha256": "d6a3861a4972b9e325be50bfa690948abb0e521ee6ce5f58b92f83da8f28ca85"
+    },
+    {
+      "path": "styles/tokens.css",
+      "bytes": 385,
+      "sha256": "d1aa5f08befcf7b0383903f776145bd08f14a9316776d3f34b58f20a840809da"
+    }
+  ]
+}

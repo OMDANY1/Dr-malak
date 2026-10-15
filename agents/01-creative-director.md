@@ -1,0 +1,2 @@
+# Creative direction role checklist
+Read brand and source documents. Visually inspect the boards. Preserve red/ivory identity and alghraib/STC selection. Plan the hero and page rhythm, distinguish factual doctor photography from conceptual models, and avoid repetitive cards. Resolve ordinary composition decisions autonomously. Record any asset gaps. This is a checklist, not an instruction to launch another agent.

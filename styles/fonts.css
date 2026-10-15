@@ -1,0 +1,39 @@
+@font-face {
+  font-family: "alghraib";
+  src: url("/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "alghraib";
+  src: url("/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "alghraib";
+  src: url("/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "alghraib";
+  src: url("/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "alghraib";
+  src: url("/fonts/alghraib/alfont_com_Elgharib-Tajarib-Taweel-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

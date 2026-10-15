@@ -1,0 +1,15 @@
+:root {
+  --brand-red: #a83232;
+  --brand-cream: #fffcf0;
+  --color-ink: #332725;
+  --color-border: #e6d8cf;
+  --font-display: "alghraib", "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
+  /* STC webfont binaries are not yet supplied in public/fonts/.
+     Do not reference an unbundled "STC" family name in CSS, because local OS "STC Regular"
+     installations have broken Arabic mark/diacritic metrics that split words around harakat.
+     Once verified STC webfont files and @font-face rules are added, prepend "STC" here. */
+  --font-body: "Segoe UI", Tahoma, "Geeza Pro", "Noto Naskh Arabic", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --content-max: 1200px;
+  --space-section: clamp(4rem, 8vw, 7rem);
+  --radius-control: 8px;
+}

@@ -1,0 +1,21 @@
+{
+  "name": {
+    "ar": "د. ملاك السيف",
+    "en": "Dr. Malak Alsaif"
+  },
+  "subtitle": {
+    "ar": "جراحة التجميل والترميم",
+    "en": "Plastic & Reconstructive Surgery"
+  },
+  "contact": {
+    "phone": "+966580376463",
+    "whatsappDigits": "966580376463",
+    "instagram": "https://www.instagram.com/dralsaifma/"
+  },
+  "siteUrl": null,
+  "previewNoIndex": true,
+  "doctorPortrait": "/images/doctor/dr-malak-alsaif.jpg",
+  "approvedLogo": null,
+  "fontsStatus": "elgharib-supplied-stc-pending",
+  "collectsLeadForms": false
+}

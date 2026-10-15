@@ -1,0 +1,47 @@
+{
+  "id": "en-questions-to-discuss",
+  "locale": "en",
+  "slug": "questions-to-discuss",
+  "translationKey": "questions-to-discuss",
+  "title": "Questions to Help You Discuss Your Expectations During a Consultation",
+  "description": "General discussion topics to support a clear, balanced conversation about suitable options and practical planning during your consultation.",
+  "category": "patient-education",
+  "coverImage": "/images/generated/article-questions-to-discuss.jpg",
+  "coverAlt": "Minimal blank ivory cards arranged thoughtfully with a fine deep-red divider line",
+  "status": "draft",
+  "authorName": "Editorial Draft — Pending Medical Review",
+  "publishedAt": null,
+  "updatedAt": null,
+  "reviewedBy": null,
+  "reviewedAt": null,
+  "body": [
+    {
+      "id": "understanding-suitability",
+      "heading": "Understanding Individual Suitability",
+      "paragraphs": [
+        "Because anatomical characteristics and medical histories vary from person to person, an approach suitable for one individual may not be appropriate for another. During your consultation, ask how different options relate specifically to your clinical assessment.",
+        "Focusing on individualized evaluation helps align expectations with realistic clinical considerations."
+      ]
+    },
+    {
+      "id": "discussing-practical-steps",
+      "heading": "Clarifying Practical and Organizational Steps",
+      "paragraphs": [
+        "Alongside clinical questions, it is helpful to ask about the practical preparation required before any proposed care plan and how follow-up visits are arranged.",
+        "Understanding the organizational timeline allows you to plan thoughtfully around your personal and professional commitments."
+      ],
+      "listItems": [
+        "What preparation or evaluations are needed before taking the next step?",
+        "How are follow-up appointments structured and coordinated?",
+        "What general scheduling considerations should be kept in mind?"
+      ]
+    },
+    {
+      "id": "taking-time-to-decide",
+      "heading": "Taking Time for an Informed Decision",
+      "paragraphs": [
+        "A sound medical decision is made with clarity and confidence rather than urgency. After your consultation, take time to reflect on the information discussed and reach out to the coordination contact if you have follow-up administrative questions."
+      ]
+    }
+  ]
+}
