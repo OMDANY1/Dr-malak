@@ -1,7 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getCopy, siteConfig } from "@/lib/content";
 import {
   getAllArticlesForLocale,
@@ -19,30 +19,34 @@ import {
 import { toAbsoluteUrl } from "@/lib/seo";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { ArticleInteractiveEnhancements } from "@/components/articles/ArticleInteractiveEnhancements";
+import { isDraftPreviewRequest } from "@/lib/cms/auth";
+import { resolveSlugRedirect } from "@/lib/cms/db";
+import { sanitizeRichTextInline } from "@/lib/cms/sanitize";
 
 interface ArticlePageProps {
   params: Promise<{ locale: string; slug: string }>;
   searchParams: Promise<{ preview?: string }>;
 }
 
-function resolveArticle(
+async function resolveArticle(
   locale: Locale,
   slug: string,
-  allowDraftQuery: boolean
+  previewQueryParam?: string
 ) {
-  const pub = getPublicArticleBySlug(locale, slug);
-  if (pub) return pub;
+  const isAuthenticatedPreview = await isDraftPreviewRequest(previewQueryParam);
+  const pub = getPublicArticleBySlug(locale, slug, isAuthenticatedPreview);
+  if (pub) return { article: pub, isAuthenticatedPreview };
 
   const allowLocalDrafts =
     process.env.NODE_ENV !== "production" &&
     process.env.ALLOW_LOCAL_DRAFT_PREVIEW === "true";
 
-  if (allowDraftQuery && allowLocalDrafts) {
-    return (
-      getAllArticlesForLocale(locale).find((a) => a.slug === slug) ?? null
-    );
+  if (previewQueryParam === "draft" && allowLocalDrafts) {
+    const match =
+      getAllArticlesForLocale(locale).find((a) => a.slug === slug) ?? null;
+    return { article: match, isAuthenticatedPreview: true };
   }
-  return null;
+  return { article: null, isAuthenticatedPreview };
 }
 
 export async function generateMetadata({
@@ -53,14 +57,18 @@ export async function generateMetadata({
   const sp = await searchParams;
   if (!isValidLocale(locale)) return {};
 
-  const isPreviewQuery = sp?.preview === "draft";
-  const article = resolveArticle(locale, slug, isPreviewQuery);
+  const { article, isAuthenticatedPreview } = await resolveArticle(
+    locale,
+    slug,
+    sp?.preview
+  );
   if (!article) return {};
 
   const oppositeLocale = getOppositeLocale(locale);
   const translated = getTranslatedArticle(
     article.translationKey,
-    oppositeLocale
+    oppositeLocale,
+    isAuthenticatedPreview
   );
 
   const canonicalUrl = toAbsoluteUrl(`/${locale}/articles/${article.slug}`);
@@ -77,11 +85,19 @@ export async function generateMetadata({
     languages["x-default"] = canonicalUrl;
   }
 
-  const isNoIndex = siteConfig.previewNoIndex || article.status !== "published";
+  const isNoIndex =
+    siteConfig.previewNoIndex ||
+    article.status !== "published" ||
+    isAuthenticatedPreview;
+
+  const metaTitle =
+    article.seoTitle || `${article.title} | ${siteConfig.name[locale]}`;
+  const metaDesc = article.seoDescription || article.description;
+  const socialImg = article.socialImage || article.coverImage;
 
   return {
-    title: `${article.title} | ${siteConfig.name[locale]}`,
-    description: article.description,
+    title: metaTitle,
+    description: metaDesc,
     robots: isNoIndex
       ? { index: false, follow: false }
       : { index: true, follow: true },
@@ -90,8 +106,8 @@ export async function generateMetadata({
       languages,
     },
     openGraph: {
-      title: article.title,
-      description: article.description,
+      title: metaTitle,
+      description: metaDesc,
       url: canonicalUrl,
       type: "article",
       locale: locale === "ar" ? "ar_SA" : "en_US",
@@ -99,7 +115,7 @@ export async function generateMetadata({
       ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
       images: [
         {
-          url: toAbsoluteUrl(article.coverImage),
+          url: toAbsoluteUrl(socialImg),
           alt: article.coverAlt,
         },
       ],
@@ -118,8 +134,17 @@ export default async function ArticleDetailPage({
     notFound();
   }
 
-  const isPreviewQuery = sp?.preview === "draft";
-  const article = resolveArticle(locale, slug, isPreviewQuery);
+  // Handle automatic redirects for renamed article slugs
+  const redirectTarget = resolveSlugRedirect("article", slug);
+  if (redirectTarget && redirectTarget !== slug) {
+    permanentRedirect(localizePath(locale, `articles/${redirectTarget}`));
+  }
+
+  const { article, isAuthenticatedPreview } = await resolveArticle(
+    locale,
+    slug,
+    sp?.preview
+  );
   if (!article) {
     notFound();
   }
@@ -128,14 +153,14 @@ export default async function ArticleDetailPage({
   const oppositeLocale = getOppositeLocale(locale);
   const translatedPub = getTranslatedArticle(
     article.translationKey,
-    oppositeLocale
+    oppositeLocale,
+    false
   );
-  const translatedDraft =
-    isPreviewQuery && siteConfig.previewNoIndex
-      ? getAllArticlesForLocale(oppositeLocale).find(
-          (a) => a.translationKey === article.translationKey
-        )
-      : null;
+  const translatedDraft = isAuthenticatedPreview
+    ? getAllArticlesForLocale(oppositeLocale).find(
+        (a) => a.translationKey === article.translationKey
+      )
+    : null;
 
   const switchTargetHref = translatedPub
     ? localizePath(oppositeLocale, `articles/${translatedPub.slug}`)
@@ -212,6 +237,9 @@ export default async function ArticleDetailPage({
       article.publishedAt ||
       article.updatedAt
   );
+
+  const focalPoint = article.coverFocalPoint ?? { x: 50, y: 50 };
+  let headingCounter = 0;
 
   return (
     <>
@@ -324,6 +352,9 @@ export default async function ArticleDetailPage({
                 loading="eager"
                 decoding="async"
                 className="ed-article-cover-img"
+                style={{
+                  objectPosition: `${focalPoint.x}% ${focalPoint.y}%`,
+                }}
               />
             </figure>
           </div>
@@ -338,39 +369,207 @@ export default async function ArticleDetailPage({
                 tocTitle={copy.articlesPage.tocTitle}
               />
 
-              {/* Article Body Sections */}
+              {/* Article Body Rich-Text Blocks */}
               <div className="article-body-prose">
-                {article.body.map((section, idx) => (
-                  <section
-                    key={section.id}
-                    id={section.id}
-                    className="article-body-section"
-                  >
-                    <div className="ed-eyebrow-cluster">
-                      <span className="ed-index-num" dir="ltr">
-                        0{idx + 1}
-                      </span>
-                      <span className="ed-eyebrow-rule" aria-hidden="true" />
-                    </div>
-                    <h2 className="article-section-heading">
-                      {section.heading}
-                    </h2>
-                    {section.paragraphs.map((p, pIdx) => (
-                      <p key={pIdx} className="article-paragraph">
-                        {p}
-                      </p>
-                    ))}
-                    {section.listItems && section.listItems.length > 0 && (
-                      <ul className="editorial-bullet-list">
-                        {section.listItems.map((li) => (
-                          <li key={li} className="editorial-bullet-item">
-                            {li}
-                          </li>
+                {article.blocks && article.blocks.length > 0
+                  ? article.blocks.map((block, idx) => {
+                      if (block.type === "heading") {
+                        headingCounter++;
+                        const HeadingTag =
+                          block.headingLevel === 3 ? "h3" : "h2";
+                        return (
+                          <div
+                            key={`${block.id}-${idx}`}
+                            id={block.id}
+                            className="article-body-heading-block"
+                          >
+                            {block.headingLevel !== 3 && (
+                              <div className="ed-eyebrow-cluster">
+                                <span className="ed-index-num" dir="ltr">
+                                  {String(headingCounter).padStart(2, "0")}
+                                </span>
+                                <span
+                                  className="ed-eyebrow-rule"
+                                  aria-hidden="true"
+                                />
+                              </div>
+                            )}
+                            <HeadingTag className="article-section-heading">
+                              {block.text}
+                            </HeadingTag>
+                          </div>
+                        );
+                      }
+
+                      if (block.type === "paragraph") {
+                        const safeHtml = sanitizeRichTextInline(
+                          block.text || ""
+                        );
+                        return (
+                          <div
+                            key={`${block.id}-${idx}`}
+                            className="article-paragraph-wrap"
+                          >
+                            <p
+                              className="article-paragraph"
+                              dangerouslySetInnerHTML={{ __html: safeHtml }}
+                            />
+                            {block.linkHref && (
+                              <p className="article-inline-cta-link">
+                                <a
+                                  href={block.linkHref}
+                                  className="ed-inline-arrow-link"
+                                  target={
+                                    block.linkHref.startsWith("http")
+                                      ? "_blank"
+                                      : undefined
+                                  }
+                                  rel={
+                                    block.linkHref.startsWith("http")
+                                      ? "noopener noreferrer"
+                                      : undefined
+                                  }
+                                >
+                                  <span>
+                                    {block.linkLabel || block.linkHref}
+                                  </span>
+                                  <span aria-hidden="true">
+                                    {locale === "ar" ? "←" : "→"}
+                                  </span>
+                                </a>
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      if (block.type === "callout") {
+                        const safeHtml = sanitizeRichTextInline(
+                          block.text || ""
+                        );
+                        return (
+                          <aside
+                            key={`${block.id}-${idx}`}
+                            className="ed-specialty-sheet-note"
+                          >
+                            <span
+                              className="ed-eyebrow-rule"
+                              aria-hidden="true"
+                            />
+                            <p
+                              dangerouslySetInnerHTML={{ __html: safeHtml }}
+                            />
+                          </aside>
+                        );
+                      }
+
+                      if (block.type === "bullet-list") {
+                        return (
+                          <ul
+                            key={`${block.id}-${idx}`}
+                            className="editorial-bullet-list"
+                          >
+                            {(block.items || []).map((li, liIdx) => (
+                              <li
+                                key={`${block.id}-li-${liIdx}`}
+                                className="editorial-bullet-item"
+                                dangerouslySetInnerHTML={{
+                                  __html: sanitizeRichTextInline(li),
+                                }}
+                              />
+                            ))}
+                          </ul>
+                        );
+                      }
+
+                      if (block.type === "ordered-list") {
+                        return (
+                          <ol
+                            key={`${block.id}-${idx}`}
+                            className="ed-context-points-list"
+                          >
+                            {(block.items || []).map((li, liIdx) => (
+                              <li
+                                key={`${block.id}-oli-${liIdx}`}
+                                className="ed-context-point-item"
+                              >
+                                <span
+                                  className="ed-credential-num"
+                                  dir="ltr"
+                                >
+                                  {String(liIdx + 1).padStart(2, "0")}
+                                </span>
+                                <p
+                                  dangerouslySetInnerHTML={{
+                                    __html: sanitizeRichTextInline(li),
+                                  }}
+                                />
+                              </li>
+                            ))}
+                          </ol>
+                        );
+                      }
+
+                      if (block.type === "image" && block.imageUrl) {
+                        return (
+                          <figure
+                            key={`${block.id}-${idx}`}
+                            className="ed-article-inline-figure"
+                          >
+                            <img
+                              src={block.imageUrl}
+                              alt={block.imageAlt || article.title}
+                              width={960}
+                              height={640}
+                              loading="lazy"
+                              decoding="async"
+                              className="ed-article-inline-img"
+                            />
+                            {block.imageCaption && (
+                              <figcaption className="ed-specialty-sheet-caption">
+                                {block.imageCaption}
+                              </figcaption>
+                            )}
+                          </figure>
+                        );
+                      }
+
+                      return null;
+                    })
+                  : article.body.map((section, idx) => (
+                      <section
+                        key={section.id}
+                        id={section.id}
+                        className="article-body-section"
+                      >
+                        <div className="ed-eyebrow-cluster">
+                          <span className="ed-index-num" dir="ltr">
+                            0{idx + 1}
+                          </span>
+                          <span
+                            className="ed-eyebrow-rule"
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <h2 className="article-section-heading">
+                          {section.heading}
+                        </h2>
+                        {section.paragraphs.map((p, pIdx) => (
+                          <p key={pIdx} className="article-paragraph">
+                            {p}
+                          </p>
                         ))}
-                      </ul>
-                    )}
-                  </section>
-                ))}
+                        {section.listItems && section.listItems.length > 0 && (
+                          <ul className="editorial-bullet-list">
+                            {section.listItems.map((li) => (
+                              <li key={li} className="editorial-bullet-item">
+                                {li}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+                    ))}
 
                 <div className="article-back-row">
                   <Link href={articlesHubHref} className="btn btn-secondary">

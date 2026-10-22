@@ -1,9 +1,33 @@
-import React from "react";
+"use client";
+
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { getCopy } from "@/lib/content";
-import { getCategoryLabel, getPublishedArticles } from "@/lib/articles";
 import { Locale, localizePath } from "@/lib/locales";
 import { Reveal } from "@/components/interactive/Reveal";
+import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
+import {
+  calculateBlocksReadingTime,
+  resolveLocalizedText,
+} from "@/lib/cms/sanitize";
+
+function getCategoryLabel(locale: Locale, category: string): string {
+  const map: Record<Locale, Record<string, string>> = {
+    ar: {
+      "consultation-prep": "الاستعداد للاستشارة",
+      "plastic-surgery": "جراحة التجميل",
+      "reconstructive-surgery": "الجراحة الترميمية",
+      "burn-care": "آثار الحروق",
+    },
+    en: {
+      "consultation-prep": "Consultation Preparation",
+      "plastic-surgery": "Plastic Surgery",
+      "reconstructive-surgery": "Reconstructive Surgery",
+      "burn-care": "Burn Care",
+    },
+  };
+  return map[locale]?.[category] || category;
+}
 
 interface EditorialJournalProps {
   locale: Locale;
@@ -11,8 +35,62 @@ interface EditorialJournalProps {
 
 export function EditorialJournal({ locale }: EditorialJournalProps) {
   const copy = getCopy(locale);
-  const published = getPublishedArticles(locale);
+  const cms = useCmsSnapshot();
   const hubHref = localizePath(locale, "articles");
+
+  const sectionConfig = cms?.homepage.sections.find((s) => s.id === "journal");
+  const sectionEyebrow = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.eyebrow,
+        locale,
+        copy.articlesPreviewSection.eyebrow
+      )
+    : copy.articlesPreviewSection.eyebrow;
+  const sectionTitle = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.title,
+        locale,
+        copy.articlesPreviewSection.title
+      )
+    : copy.articlesPreviewSection.title;
+  const sectionSubtitle = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.supportingText,
+        locale,
+        copy.articlesPreviewSection.subtitle
+      )
+    : copy.articlesPreviewSection.subtitle;
+
+  const published = useMemo(() => {
+    if (!cms) return [];
+    return cms.articles
+      .filter((art) => {
+        const loc = art.content.locales[locale];
+        return Boolean(loc && loc.title.trim());
+      })
+      .map((art) => {
+        const loc = art.content.locales[locale];
+        const blocks = loc.blocks || [];
+        const rt = calculateBlocksReadingTime(blocks);
+        const toc = blocks
+          .filter((b) => b.type === "heading" && Boolean(b.text))
+          .map((b) => ({
+            id: b.id,
+            heading: b.text || "",
+          }));
+        return {
+          id: `${locale}-${art.slug}`,
+          slug: art.slug,
+          title: loc.title,
+          description: loc.excerpt,
+          category: art.category,
+          coverImage: art.content.coverImage,
+          coverAlt: loc.coverAlt,
+          readingTimeMinutes: rt.minutes,
+          toc,
+        };
+      });
+  }, [cms, locale]);
 
   const [featured, ...supporting] = published;
 
@@ -31,20 +109,16 @@ export function EditorialJournal({ locale }: EditorialJournalProps) {
                 04
               </span>
               <span className="ed-eyebrow-rule" aria-hidden="true" />
-              <span className="ed-eyebrow-label">
-                {copy.articlesPreviewSection.eyebrow}
-              </span>
+              <span className="ed-eyebrow-label">{sectionEyebrow}</span>
             </div>
 
             <h2 id="journal-heading" className="ed-section-title">
-              {copy.articlesPreviewSection.title}
+              {sectionTitle}
             </h2>
           </div>
 
           <div className="ed-journal-header-aside">
-            <p className="ed-section-intro">
-              {copy.articlesPreviewSection.subtitle}
-            </p>
+            <p className="ed-section-intro">{sectionSubtitle}</p>
             <Link href={hubHref} className="ed-inline-arrow-link">
               <span>{copy.articlesPreviewSection.hubLinkLabel}</span>
               <span aria-hidden="true">{locale === "ar" ? "←" : "→"}</span>

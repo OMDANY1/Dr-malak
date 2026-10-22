@@ -1,6 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
 import { Locale } from "./locales";
+import { getPublicCmsSnapshot } from "./cms/db";
+import { calculateBlocksReadingTime } from "./cms/sanitize";
+import { FocalPoint, RichTextBlock } from "./cms/types";
 
 export type ArticleStatus = "draft" | "published";
 
@@ -21,6 +22,10 @@ export interface ArticleRecord {
   category: string;
   coverImage: string;
   coverAlt: string;
+  coverFocalPoint?: FocalPoint;
+  socialImage?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   status: ArticleStatus;
   authorName: string | null;
   publishedAt: string | null;
@@ -28,6 +33,7 @@ export interface ArticleRecord {
   reviewedBy: string | null;
   reviewedAt: string | null;
   body: ArticleSection[];
+  blocks?: RichTextBlock[];
 }
 
 export interface TocItem {
@@ -38,9 +44,8 @@ export interface TocItem {
 export interface EnrichedArticle extends ArticleRecord {
   readingTimeMinutes: number;
   toc: TocItem[];
+  blocks: RichTextBlock[];
 }
-
-const ARTICLES_ROOT = path.join(process.cwd(), "content", "articles");
 
 export const ARTICLE_CATEGORIES: Record<
   Locale,
@@ -83,38 +88,107 @@ export function generateToc(sections: ArticleSection[]): TocItem[] {
   }));
 }
 
-function enrichArticle(record: ArticleRecord): EnrichedArticle {
-  return {
-    ...record,
-    readingTimeMinutes: calculateReadingTime(record.body),
-    toc: generateToc(record.body),
-  };
+/**
+ * Converts structured RichTextBlock[] into ArticleSection[] for TOC and backward-compatible consumers.
+ */
+function richBlocksToSections(blocks: RichTextBlock[]): ArticleSection[] {
+  const sections: ArticleSection[] = [];
+  let current: ArticleSection | null = null;
+
+  for (const block of blocks) {
+    if (block.type === "heading" && block.text) {
+      if (current) {
+        sections.push(current);
+      }
+      current = {
+        id: block.id,
+        heading: block.text,
+        paragraphs: [],
+      };
+    } else if (
+      (block.type === "paragraph" || block.type === "callout") &&
+      block.text
+    ) {
+      if (!current) {
+        current = {
+          id: "intro",
+          heading: "",
+          paragraphs: [],
+        };
+      }
+      current.paragraphs.push(block.text.replace(/<\/?[a-z][^>]*>/gi, ""));
+    } else if (
+      (block.type === "bullet-list" || block.type === "ordered-list") &&
+      block.items
+    ) {
+      if (!current) {
+        current = {
+          id: "intro",
+          heading: "",
+          paragraphs: [],
+        };
+      }
+      current.listItems = [
+        ...(current.listItems ?? []),
+        ...block.items.map((item) => item.replace(/<\/?[a-z][^>]*>/gi, "")),
+      ];
+    }
+  }
+
+  if (current) {
+    sections.push(current);
+  }
+  return sections;
 }
 
 /**
- * Loads all articles (draft and published) for a given locale from content/articles/{locale}/.
- * Internal helper — public routes must use getPublishedArticles or getPublishedArticleBySlug.
+ * Loads all articles (draft and published) for a given locale from the CMS database.
  */
 export function getAllArticlesForLocale(locale: Locale): EnrichedArticle[] {
-  const localeDir = path.join(ARTICLES_ROOT, locale);
-  if (!fs.existsSync(localeDir)) {
-    return [];
-  }
-
-  const files = fs
-    .readdirSync(localeDir)
-    .filter((f) => f.endsWith(".json"))
-    .sort();
-
+  const snapshot = getPublicCmsSnapshot({ previewDrafts: true });
   const articles: EnrichedArticle[] = [];
 
-  for (const file of files) {
-    const fullPath = path.join(localeDir, file);
-    const raw = fs.readFileSync(fullPath, "utf-8");
-    const parsed = JSON.parse(raw) as ArticleRecord;
-    if (parsed.locale === locale) {
-      articles.push(enrichArticle(parsed));
+  for (const item of snapshot.articles) {
+    const locContent = item.content.locales[locale];
+    if (!locContent || !locContent.title.trim()) {
+      continue;
     }
+
+    const blocks = locContent.blocks || [];
+    const sections = richBlocksToSections(blocks);
+    const readingTime = calculateBlocksReadingTime(blocks);
+    const toc = blocks
+      .filter((b) => b.type === "heading" && Boolean(b.text))
+      .map((b) => ({
+        id: b.id,
+        heading: b.text || "",
+      }));
+
+    articles.push({
+      id: `${locale}-${item.slug}`,
+      locale,
+      slug: item.slug,
+      translationKey: item.translationKey,
+      title: locContent.title,
+      description: locContent.excerpt,
+      category: item.category,
+      coverImage: item.content.coverImage,
+      coverAlt: locContent.coverAlt,
+      coverFocalPoint: item.content.coverFocalPoint,
+      socialImage: item.content.socialImage || item.content.coverImage,
+      seoTitle: locContent.seoTitle || locContent.title,
+      seoDescription: locContent.seoDescription || locContent.excerpt,
+      status: item.status,
+      authorName: locContent.authorName || null,
+      publishedAt: item.content.publishedAt || null,
+      updatedAt: item.content.updatedAt || null,
+      reviewedBy: locContent.reviewedBy || null,
+      reviewedAt: null,
+      body: sections,
+      blocks,
+      readingTimeMinutes: readingTime.minutes,
+      toc,
+    });
   }
 
   return articles.sort((a, b) => {
@@ -128,58 +202,96 @@ export function getAllArticlesForLocale(locale: Locale): EnrichedArticle[] {
  * Returns ONLY published articles for public listings, homepage teasers, search/filter, and sitemap.
  */
 export function getPublishedArticles(locale: Locale): EnrichedArticle[] {
-  return getAllArticlesForLocale(locale).filter(
-    (article) => article.status === "published"
-  );
+  const snapshot = getPublicCmsSnapshot({ previewDrafts: false });
+  const articles: EnrichedArticle[] = [];
+
+  for (const item of snapshot.articles) {
+    if (item.status !== "published") continue;
+    const locContent = item.content.locales[locale];
+    if (!locContent || !locContent.title.trim()) continue;
+
+    const blocks = locContent.blocks || [];
+    const sections = richBlocksToSections(blocks);
+    const readingTime = calculateBlocksReadingTime(blocks);
+    const toc = blocks
+      .filter((b) => b.type === "heading" && Boolean(b.text))
+      .map((b) => ({
+        id: b.id,
+        heading: b.text || "",
+      }));
+
+    articles.push({
+      id: `${locale}-${item.slug}`,
+      locale,
+      slug: item.slug,
+      translationKey: item.translationKey,
+      title: locContent.title,
+      description: locContent.excerpt,
+      category: item.category,
+      coverImage: item.content.coverImage,
+      coverAlt: locContent.coverAlt,
+      coverFocalPoint: item.content.coverFocalPoint,
+      socialImage: item.content.socialImage || item.content.coverImage,
+      seoTitle: locContent.seoTitle || locContent.title,
+      seoDescription: locContent.seoDescription || locContent.excerpt,
+      status: "published",
+      authorName: locContent.authorName || null,
+      publishedAt: item.content.publishedAt || null,
+      updatedAt: item.content.updatedAt || null,
+      reviewedBy: locContent.reviewedBy || null,
+      reviewedAt: null,
+      body: sections,
+      blocks,
+      readingTimeMinutes: readingTime.minutes,
+      toc,
+    });
+  }
+
+  return articles;
 }
 
 /**
  * Returns a single published article by slug, or null if not found or still a draft.
- * Drafts are never exposed on public URLs unless local development preview is explicitly enabled
- * via ALLOW_LOCAL_DRAFT_PREVIEW=true in development mode.
+ * Drafts are never exposed on public URLs unless authenticated draft preview is active
+ * or ALLOW_LOCAL_DRAFT_PREVIEW=true in development mode.
  */
 export function getPublicArticleBySlug(
   locale: Locale,
-  slug: string
+  slug: string,
+  allowAuthenticatedDraftPreview = false
 ): EnrichedArticle | null {
   const allowLocalDrafts =
-    process.env.NODE_ENV !== "production" &&
-    process.env.ALLOW_LOCAL_DRAFT_PREVIEW === "true";
+    (process.env.NODE_ENV !== "production" &&
+      process.env.ALLOW_LOCAL_DRAFT_PREVIEW === "true") ||
+    allowAuthenticatedDraftPreview;
 
-  const all = getAllArticlesForLocale(locale);
-  const match = all.find((a) => a.slug === slug);
-  if (!match) return null;
-
-  if (match.status === "published" || allowLocalDrafts) {
-    return match;
+  if (allowLocalDrafts) {
+    const all = getAllArticlesForLocale(locale);
+    return all.find((a) => a.slug === slug) ?? null;
   }
 
-  return null;
+  const published = getPublishedArticles(locale);
+  return published.find((a) => a.slug === slug) ?? null;
 }
 
 /**
  * Finds the translated counterpart of an article by translationKey.
- * Only returns the counterpart if it is also published (or local draft preview is enabled).
  */
 export function getTranslatedArticle(
   translationKey: string,
-  targetLocale: Locale
+  targetLocale: Locale,
+  allowAuthenticatedDraftPreview = false
 ): EnrichedArticle | null {
   const allowLocalDrafts =
-    process.env.NODE_ENV !== "production" &&
-    process.env.ALLOW_LOCAL_DRAFT_PREVIEW === "true";
+    (process.env.NODE_ENV !== "production" &&
+      process.env.ALLOW_LOCAL_DRAFT_PREVIEW === "true") ||
+    allowAuthenticatedDraftPreview;
 
-  const targetArticles = getAllArticlesForLocale(targetLocale);
-  const counterpart = targetArticles.find(
-    (a) => a.translationKey === translationKey
-  );
-  if (!counterpart) return null;
+  const list = allowLocalDrafts
+    ? getAllArticlesForLocale(targetLocale)
+    : getPublishedArticles(targetLocale);
 
-  if (counterpart.status === "published" || allowLocalDrafts) {
-    return counterpart;
-  }
-
-  return null;
+  return list.find((a) => a.translationKey === translationKey) ?? null;
 }
 
 /**

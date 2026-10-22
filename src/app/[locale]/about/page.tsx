@@ -9,35 +9,63 @@ import { ConsultationTriggerButton } from "@/components/interactive/Consultation
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { Reveal } from "@/components/interactive/Reveal";
+import { isDraftPreviewRequest } from "@/lib/cms/auth";
+import { getPublicCmsSnapshot } from "@/lib/cms/db";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ preview?: string }>;
 }
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps): Promise<Metadata> {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
   if (!isValidLocale(locale)) return {};
   const copy = getCopy(locale);
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
+  const cms = getPublicCmsSnapshot({ previewDrafts });
+  const dp = cms.doctorProfile;
   const alternates = buildPageAlternates(locale, "about");
 
+  const metaTitle = resolveLocalizedText(
+    dp.seo.title,
+    locale,
+    copy.aboutPage.meta.title
+  );
+  const metaDesc = resolveLocalizedText(
+    dp.seo.description,
+    locale,
+    copy.aboutPage.meta.description
+  );
+  const portraitSrc = dp.portraitImage || siteConfig.doctorPortrait;
+
   return {
-    title: copy.aboutPage.meta.title,
-    description: copy.aboutPage.meta.description,
+    title: metaTitle,
+    description: metaDesc,
+    ...(previewDrafts
+      ? { robots: { index: false, follow: false } }
+      : {}),
     alternates,
     openGraph: {
-      title: copy.aboutPage.meta.title,
-      description: copy.aboutPage.meta.description,
+      title: metaTitle,
+      description: metaDesc,
       url: alternates.canonical,
       locale: locale === "ar" ? "ar_SA" : "en_US",
       type: "profile",
-      ...(siteConfig.doctorPortrait
+      ...(portraitSrc
         ? {
             images: [
               {
-                url: toAbsoluteUrl(siteConfig.doctorPortrait),
-                alt: copy.aboutPage.portraitAlt,
+                url: toAbsoluteUrl(portraitSrc),
+                alt: resolveLocalizedText(
+                  dp.portraitAlt,
+                  locale,
+                  copy.aboutPage.portraitAlt
+                ),
               },
             ],
           }
@@ -46,17 +74,83 @@ export async function generateMetadata({
   };
 }
 
-export default async function AboutPage({ params }: PageProps) {
+export default async function AboutPage({ params, searchParams }: PageProps) {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
 
   if (!isValidLocale(locale)) {
     notFound();
   }
 
   const copy = getCopy(locale);
-  const portraitSrc = siteConfig.doctorPortrait;
-  const whatsappUrl = getWhatsAppUrl(locale);
-  const instagramUrl = getInstagramUrl();
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
+  const cms = getPublicCmsSnapshot({ previewDrafts });
+  const dp = cms.doctorProfile;
+
+  const portraitSrc = dp.portraitImage || siteConfig.doctorPortrait;
+  const portraitAlt = resolveLocalizedText(
+    dp.portraitAlt,
+    locale,
+    copy.aboutPage.portraitAlt
+  );
+  const portraitCaption = resolveLocalizedText(
+    dp.portraitCaption,
+    locale,
+    copy.aboutPage.portraitCaption
+  );
+  const portraitFocal = dp.portraitFocalPoint || { x: 50, y: 28 };
+  const shortLead = resolveLocalizedText(
+    dp.shortBio,
+    locale,
+    copy.aboutPage.lead
+  );
+  const bioHeading = resolveLocalizedText(
+    dp.biographyHeading,
+    locale,
+    copy.aboutPage.biographyTitle
+  );
+  const bioParagraphs =
+    dp.biographyParagraphs[locale] && dp.biographyParagraphs[locale].length > 0
+      ? dp.biographyParagraphs[locale]
+      : copy.aboutPage.biographyParagraphs;
+  const editorialNotice = resolveLocalizedText(
+    dp.editorialNotice,
+    locale,
+    copy.aboutPage.editorialNotice
+  );
+  const credsEyebrow = resolveLocalizedText(
+    dp.credentialsEyebrow,
+    locale,
+    copy.credentialsSection.eyebrow
+  );
+  const credsHeading = resolveLocalizedText(
+    dp.credentialsHeading,
+    locale,
+    copy.aboutPage.credentialsTitle
+  );
+  const credsSubtitle = resolveLocalizedText(
+    dp.credentialsNote,
+    locale,
+    copy.aboutPage.credentialsSubtitle
+  );
+  const approachEyebrow = resolveLocalizedText(
+    dp.approachEyebrow,
+    locale,
+    copy.aboutPage.approachEyebrow
+  );
+  const approachTitle = resolveLocalizedText(
+    dp.approachTitle,
+    locale,
+    copy.aboutPage.approachTitle
+  );
+
+  const whatsappUrl = getWhatsAppUrl(
+    locale,
+    undefined,
+    cms.contactSettings.whatsappDigits
+  );
+  const instagramUrl = getInstagramUrl(cms.contactSettings.instagramUrl);
+  const instagramHandle = cms.contactSettings.instagramHandle || "@dralsaifma";
 
   return (
     <>
@@ -81,7 +175,7 @@ export default async function AboutPage({ params }: PageProps) {
               {copy.aboutPage.title}
             </h1>
 
-            <p className="ed-inner-masthead-lead">{copy.aboutPage.lead}</p>
+            <p className="ed-inner-masthead-lead">{shortLead}</p>
           </div>
         </div>
       </section>
@@ -106,22 +200,20 @@ export default async function AboutPage({ params }: PageProps) {
               </div>
 
               <h2 id="about-bio-heading" className="ed-doctor-spread-name">
-                {copy.aboutPage.biographyTitle}
+                {bioHeading}
               </h2>
 
               <div className="ed-doctor-rule" aria-hidden="true" />
 
               <div className="ed-about-prose-stack">
-                {copy.aboutPage.biographyParagraphs.map((paragraph, index) => (
+                {bioParagraphs.map((paragraph, index) => (
                   <p key={index} className="ed-doctor-spread-bio">
                     {paragraph}
                   </p>
                 ))}
               </div>
 
-              <p className="ed-doctor-credentials-note">
-                {copy.aboutPage.editorialNotice}
-              </p>
+              <p className="ed-doctor-credentials-note">{editorialNotice}</p>
 
               <div className="ed-doctor-social-row">
                 <a
@@ -132,7 +224,7 @@ export default async function AboutPage({ params }: PageProps) {
                 >
                   <span>{copy.aboutPreview.instagramLabel}</span>
                   <span className="ltr-inline" dir="ltr">
-                    (@dralsaifma)
+                    ({instagramHandle})
                   </span>
                   <span aria-hidden="true">{locale === "ar" ? "↖" : "↗"}</span>
                 </a>
@@ -150,16 +242,19 @@ export default async function AboutPage({ params }: PageProps) {
                   <div className="ed-doctor-central-img-wrap">
                     <img
                       src={portraitSrc}
-                      alt={copy.aboutPage.portraitAlt}
+                      alt={portraitAlt}
                       width={1080}
                       height={1080}
                       loading="eager"
                       decoding="async"
                       className="ed-doctor-central-img"
+                      style={{
+                        objectPosition: `${portraitFocal.x}% ${portraitFocal.y}%`,
+                      }}
                     />
                   </div>
                   <figcaption className="ed-doctor-central-caption">
-                    <span>{copy.aboutPage.portraitCaption}</span>
+                    <span>{portraitCaption}</span>
                   </figcaption>
                 </figure>
               </Reveal>
@@ -176,32 +271,30 @@ export default async function AboutPage({ params }: PageProps) {
                   02
                 </span>
                 <span className="ed-eyebrow-rule" aria-hidden="true" />
-                <span className="ed-eyebrow-label">
-                  {copy.credentialsSection.eyebrow}
-                </span>
+                <span className="ed-eyebrow-label">{credsEyebrow}</span>
               </div>
 
-              <h2 className="ed-doctor-credentials-heading">
-                {copy.aboutPage.credentialsTitle}
-              </h2>
+              <h2 className="ed-doctor-credentials-heading">{credsHeading}</h2>
 
               <ol className="ed-doctor-credentials-list">
-                {copy.credentialsSection.items.map((item, idx) => (
-                  <li key={item.label} className="ed-doctor-credential-item">
+                {dp.credentials.map((item, idx) => (
+                  <li key={item.id} className="ed-doctor-credential-item">
                     <span className="ed-credential-num" dir="ltr">
                       0{idx + 1}
                     </span>
                     <div className="ed-credential-content">
-                      <span className="ed-credential-label">{item.label}</span>
-                      <p className="ed-credential-text">{item.text}</p>
+                      <span className="ed-credential-label">
+                        {resolveLocalizedText(item.label, locale, "")}
+                      </span>
+                      <p className="ed-credential-text">
+                        {resolveLocalizedText(item.text, locale, "")}
+                      </p>
                     </div>
                   </li>
                 ))}
               </ol>
 
-              <p className="ed-doctor-credentials-note">
-                {copy.aboutPage.credentialsSubtitle}
-              </p>
+              <p className="ed-doctor-credentials-note">{credsSubtitle}</p>
 
               <div className="ed-doctor-profile-action">
                 <ConsultationTriggerButton
@@ -228,20 +321,18 @@ export default async function AboutPage({ params }: PageProps) {
                 03
               </span>
               <span className="ed-eyebrow-rule" aria-hidden="true" />
-              <span className="ed-eyebrow-label">
-                {copy.aboutPage.approachEyebrow}
-              </span>
+              <span className="ed-eyebrow-label">{approachEyebrow}</span>
             </div>
 
             <h2 id="about-philosophy-heading" className="ed-section-title">
-              {copy.aboutPage.approachTitle}
+              {approachTitle}
             </h2>
           </Reveal>
 
           <div className="ed-about-pillars-grid">
-            {copy.aboutPage.approachPillars.map((pillar, idx) => (
+            {dp.approachPillars.map((pillar, idx) => (
               <Reveal
-                key={pillar.title}
+                key={pillar.id}
                 variant="fade-up"
                 delayMs={idx * 90}
                 className="ed-about-pillar-card"
@@ -249,8 +340,12 @@ export default async function AboutPage({ params }: PageProps) {
                 <span className="ed-about-pillar-num" dir="ltr">
                   0{idx + 1}
                 </span>
-                <h3 className="ed-about-pillar-title">{pillar.title}</h3>
-                <p className="ed-about-pillar-body">{pillar.body}</p>
+                <h3 className="ed-about-pillar-title">
+                  {resolveLocalizedText(pillar.title, locale, "")}
+                </h3>
+                <p className="ed-about-pillar-body">
+                  {resolveLocalizedText(pillar.body, locale, "")}
+                </p>
               </Reveal>
             ))}
           </div>

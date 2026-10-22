@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import Link from "next/link";
 import { getCopy } from "@/lib/content";
 import { getWhatsAppUrl } from "@/lib/links";
-import { Locale } from "@/lib/locales";
+import { Locale, localizePath } from "@/lib/locales";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
+import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface TypographicRedHeroProps {
   locale: Locale;
@@ -12,8 +15,59 @@ interface TypographicRedHeroProps {
 
 export function TypographicRedHero({ locale }: TypographicRedHeroProps) {
   const copy = getCopy(locale);
-  const whatsappUrl = getWhatsAppUrl(locale);
+  const cms = useCmsSnapshot();
+  const whatsappUrl = getWhatsAppUrl(
+    locale,
+    undefined,
+    cms?.contactSettings.whatsappDigits
+  );
   const sectionRef = useRef<HTMLElement | null>(null);
+
+  const hero = cms?.homepage.hero;
+
+  const eyebrow = hero
+    ? resolveLocalizedText(hero.eyebrow, locale, copy.hero.eyebrow)
+    : copy.hero.eyebrow;
+  const subtitle = hero
+    ? resolveLocalizedText(hero.subtitle, locale, copy.hero.subtitle)
+    : copy.hero.subtitle;
+  const title = hero
+    ? resolveLocalizedText(hero.title, locale, copy.hero.title)
+    : copy.hero.title;
+  const description = hero
+    ? resolveLocalizedText(hero.description, locale, copy.hero.body)
+    : copy.hero.body;
+  const imageSrc =
+    hero?.image || "/images/generated/hero-panoramic-editorial.jpg";
+  const imageAlt = hero
+    ? resolveLocalizedText(
+        hero.imageAlt,
+        locale,
+        locale === "ar"
+          ? "صورة بانورامية تحريرية هادئة تعكس العناية الطبية والجمال الطبيعي المتوازن"
+          : "Panoramic editorial photograph reflecting balanced natural beauty and attentive medical care"
+      )
+    : locale === "ar"
+    ? "صورة بانورامية تحريرية هادئة تعكس العناية الطبية والجمال الطبيعي المتوازن"
+    : "Panoramic editorial photograph reflecting balanced natural beauty and attentive medical care";
+  const focalPoint = hero?.focalPoint ?? { x: 50, y: 40 };
+  const caption = hero
+    ? resolveLocalizedText(hero.caption, locale, copy.hero.portraitCaption)
+    : copy.hero.portraitCaption;
+  const editorialNote = hero
+    ? resolveLocalizedText(hero.editorialNote, locale, copy.hero.editorialNote)
+    : copy.hero.editorialNote;
+  const coordinationNote = hero
+    ? resolveLocalizedText(
+        hero.coordinationNote,
+        locale,
+        copy.hero.coordinationNote
+      )
+    : copy.hero.coordinationNote;
+  const primaryLabel = hero
+    ? resolveLocalizedText(hero.primaryCtaLabel, locale, copy.hero.primary)
+    : copy.hero.primary;
+  const primaryDest = hero?.primaryCtaDestination || "#consultation-dialog";
 
   // Very subtle image scale change during initial scrolling (disabled under prefers-reduced-motion)
   useEffect(() => {
@@ -42,6 +96,9 @@ export function TypographicRedHero({ locale }: TypographicRedHeroProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const formattedHeadline =
+    locale === "ar" && !title.startsWith("“") ? `“${title}”` : title;
+
   return (
     <section
       ref={sectionRef}
@@ -53,11 +110,11 @@ export function TypographicRedHero({ locale }: TypographicRedHeroProps) {
         <div className="ed-red-hero-label-row">
           <span className="ed-red-hero-rule" aria-hidden="true" />
           <p className="ed-red-hero-specialty-label">
-            <span>{copy.hero.subtitle}</span>
+            <span>{subtitle}</span>
             <span className="ed-label-dot" aria-hidden="true">
               ·
             </span>
-            <span>{copy.hero.eyebrow}</span>
+            <span>{eyebrow}</span>
           </p>
           <span className="ed-red-hero-rule" aria-hidden="true" />
         </div>
@@ -65,24 +122,36 @@ export function TypographicRedHero({ locale }: TypographicRedHeroProps) {
         <h1 id="hero-heading" className="ed-red-hero-headline">
           <span className="ed-hero-line-mask">
             <span className="ed-hero-line-reveal hero-line-1">
-              {locale === "ar" ? `“${copy.hero.title}”` : copy.hero.title}
+              {formattedHeadline}
             </span>
           </span>
         </h1>
 
-        <p className="ed-red-hero-lead hero-immersive-lead">{copy.hero.body}</p>
+        <p className="ed-red-hero-lead hero-immersive-lead">{description}</p>
 
         <div className="ed-red-hero-action-cluster">
-          <ConsultationTriggerButton
-            label={copy.hero.primary}
-            topicId="general"
-            variant="ivory"
-            className="ed-red-hero-cta"
-            fallbackHref={whatsappUrl}
-          />
-          <span className="ed-red-hero-coord-note">
-            {copy.hero.coordinationNote}
-          </span>
+          {primaryDest === "#consultation-dialog" ? (
+            <ConsultationTriggerButton
+              label={primaryLabel}
+              topicId="general"
+              variant="ivory"
+              className="ed-red-hero-cta"
+              fallbackHref={whatsappUrl}
+            />
+          ) : (
+            <Link
+              href={
+                primaryDest.startsWith("/") &&
+                !primaryDest.startsWith(`/${locale}`)
+                  ? localizePath(locale, primaryDest.replace(/^\//, ""))
+                  : primaryDest
+              }
+              className="btn btn-ivory ed-red-hero-cta"
+            >
+              <span>{primaryLabel}</span>
+            </Link>
+          )}
+          <span className="ed-red-hero-coord-note">{coordinationNote}</span>
         </div>
       </div>
 
@@ -91,25 +160,22 @@ export function TypographicRedHero({ locale }: TypographicRedHeroProps) {
         <figure className="ed-panoramic-figure">
           <div className="ed-panoramic-mask">
             <img
-              src="/images/generated/hero-panoramic-editorial.jpg"
-              alt={
-                locale === "ar"
-                  ? "صورة بانورامية تحريرية هادئة تعكس العناية الطبية والجمال الطبيعي المتوازن"
-                  : "Panoramic editorial photograph reflecting balanced natural beauty and attentive medical care"
-              }
+              src={imageSrc}
+              alt={imageAlt}
               width={1408}
               height={768}
               fetchPriority="high"
               loading="eager"
               decoding="async"
               className="ed-panoramic-img"
+              style={{
+                objectPosition: `${focalPoint.x}% ${focalPoint.y}%`,
+              }}
             />
           </div>
           <figcaption className="ed-panoramic-caption">
-            <span>{copy.hero.portraitCaption}</span>
-            <span className="ed-panoramic-caption-note">
-              {copy.hero.editorialNote}
-            </span>
+            <span>{caption}</span>
+            <span className="ed-panoramic-caption-note">{editorialNote}</span>
           </figcaption>
         </figure>
       </div>

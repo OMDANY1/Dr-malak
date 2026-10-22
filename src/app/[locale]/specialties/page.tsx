@@ -9,22 +9,32 @@ import { ConsultationTriggerButton } from "@/components/interactive/Consultation
 import { InteractiveConsultationSteps } from "@/components/editorial/InteractiveConsultationSteps";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { Reveal } from "@/components/interactive/Reveal";
+import { isDraftPreviewRequest } from "@/lib/cms/auth";
+import { getPublicCmsSnapshot } from "@/lib/cms/db";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ preview?: string }>;
 }
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps): Promise<Metadata> {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
   if (!isValidLocale(locale)) return {};
   const copy = getCopy(locale);
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
   const alternates = buildPageAlternates(locale, "specialties");
 
   return {
     title: copy.specialtiesPage.meta.title,
     description: copy.specialtiesPage.meta.description,
+    ...(previewDrafts
+      ? { robots: { index: false, follow: false } }
+      : {}),
     alternates,
     openGraph: {
       title: copy.specialtiesPage.meta.title,
@@ -46,15 +56,42 @@ export async function generateMetadata({
   };
 }
 
-export default async function SpecialtiesPage({ params }: PageProps) {
+export default async function SpecialtiesPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
 
   if (!isValidLocale(locale)) {
     notFound();
   }
 
   const copy = getCopy(locale);
-  const items = copy.specialtiesSection.items;
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
+  const cms = getPublicCmsSnapshot({ previewDrafts });
+
+  const items = cms.specialties.map((spec, idx) => {
+    const c = spec.content;
+    return {
+      id: spec.slug,
+      number: c.numberLabel || String(idx + 1).padStart(2, "0"),
+      title: resolveLocalizedText(c.title, locale, spec.slug),
+      summary: resolveLocalizedText(c.introduction, locale, ""),
+      detail: resolveLocalizedText(c.fullContent, locale, ""),
+      assessmentNote: resolveLocalizedText(c.assessmentNote, locale, ""),
+      visualCaption: resolveLocalizedText(c.visualCaption, locale, ""),
+      image: c.coverImage,
+      imageAlt: resolveLocalizedText(c.imageAlt, locale, ""),
+      focalPoint: c.focalPoint || { x: 50, y: 50 },
+      whatsappEnquiryMessage: resolveLocalizedText(
+        c.whatsappMessage,
+        locale,
+        ""
+      ),
+      ctaLabel: resolveLocalizedText(c.ctaLabel, locale, copy.hero.primary),
+    };
+  });
 
   return (
     <>
@@ -105,12 +142,13 @@ export default async function SpecialtiesPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* 2. Three Alternating Editorial Monograph Chapters */}
+      {/* 2. Alternating Editorial Monograph Chapters */}
       <div className="ed-specialties-chapters">
         {items.map((item, idx) => {
           const itemWhatsappUrl = getWhatsAppUrl(
             locale,
-            item.whatsappEnquiryMessage
+            item.whatsappEnquiryMessage,
+            cms.contactSettings.whatsappDigits
           );
           const isReversed = idx % 2 === 1;
 
@@ -139,6 +177,9 @@ export default async function SpecialtiesPage({ params }: PageProps) {
                           loading={idx === 0 ? "eager" : "lazy"}
                           decoding="async"
                           className="ed-specialty-chapter-img"
+                          style={{
+                            objectPosition: `${item.focalPoint.x}% ${item.focalPoint.y}%`,
+                          }}
                         />
                         <span
                           className="ed-gallery-index-tag"

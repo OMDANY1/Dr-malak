@@ -12,22 +12,31 @@ import { isValidLocale } from "@/lib/locales";
 import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
 import { ArticlesExplorer } from "@/components/articles/ArticlesExplorer";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
+import { isDraftPreviewRequest } from "@/lib/cms/auth";
+import { getPublicCmsSnapshot } from "@/lib/cms/db";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ preview?: string }>;
 }
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps): Promise<Metadata> {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
   if (!isValidLocale(locale)) return {};
   const copy = getCopy(locale);
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
   const alternates = buildPageAlternates(locale, "articles");
 
   return {
     title: copy.articlesPage.meta.title,
     description: copy.articlesPage.meta.description,
+    ...(previewDrafts
+      ? { robots: { index: false, follow: false } }
+      : {}),
     alternates,
     openGraph: {
       title: copy.articlesPage.meta.title,
@@ -49,22 +58,34 @@ export async function generateMetadata({
   };
 }
 
-export default async function ArticlesPage({ params }: PageProps) {
+export default async function ArticlesPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
 
   if (!isValidLocale(locale)) {
     notFound();
   }
 
   const copy = getCopy(locale);
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
+  const cms = getPublicCmsSnapshot({ previewDrafts });
+
   const publishedArticles = getPublishedArticles(locale);
   const allowLocalDrafts =
-    process.env.NODE_ENV !== "production" &&
-    process.env.ALLOW_LOCAL_DRAFT_PREVIEW === "true";
+    (process.env.NODE_ENV !== "production" &&
+      process.env.ALLOW_LOCAL_DRAFT_PREVIEW === "true") ||
+    previewDrafts;
   const draftArticles = allowLocalDrafts
     ? getAllArticlesForLocale(locale).filter((a) => a.status === "draft")
     : [];
-  const whatsappUrl = getWhatsAppUrl(locale);
+  const whatsappUrl = getWhatsAppUrl(
+    locale,
+    undefined,
+    cms.contactSettings.whatsappDigits
+  );
 
   return (
     <>

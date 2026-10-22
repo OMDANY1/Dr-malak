@@ -7,10 +7,13 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
 } from "react";
 import { getCopy } from "@/lib/content";
 import { getWhatsAppUrl } from "@/lib/links";
 import { Locale } from "@/lib/locales";
+import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface ConsultationDialogContextValue {
   openDialog: (initialTopicId?: string, triggerEl?: HTMLElement | null) => void;
@@ -35,8 +38,42 @@ export function ConsultationDialogProvider({
   children,
 }: ConsultationDialogProviderProps) {
   const copy = getCopy(locale);
+  const cms = useCmsSnapshot();
   const dialogCopy = copy.consultationDialog;
-  const topics = dialogCopy.topics;
+
+  const whatsappDigits = cms?.contactSettings.whatsappDigits;
+  const defaultGeneralMsg = cms
+    ? resolveLocalizedText(
+        cms.contactSettings.defaultWhatsappMessage,
+        locale,
+        dialogCopy.topics[0]?.message ?? ""
+      )
+    : dialogCopy.topics[0]?.message ?? "";
+
+  const topics = useMemo(() => {
+    if (!cms || cms.specialties.length === 0) {
+      return dialogCopy.topics;
+    }
+    const generalTopic = {
+      ...dialogCopy.topics[0],
+      message: defaultGeneralMsg,
+    };
+    const specTopics = cms.specialties.map((spec) => ({
+      id: spec.slug,
+      label: resolveLocalizedText(spec.content.title, locale, spec.slug),
+      description: resolveLocalizedText(
+        spec.content.introduction,
+        locale,
+        ""
+      ),
+      message: resolveLocalizedText(
+        spec.content.whatsappMessage,
+        locale,
+        defaultGeneralMsg
+      ),
+    }));
+    return [generalTopic, ...specTopics];
+  }, [cms, dialogCopy.topics, locale, defaultGeneralMsg]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
@@ -133,8 +170,16 @@ export function ConsultationDialogProvider({
     };
   }, [isOpen, closeDialog]);
 
-  const encodedWhatsappUrl = getWhatsAppUrl(locale, draftMessage);
-  const directDefaultWhatsappUrl = getWhatsAppUrl(locale);
+  const encodedWhatsappUrl = getWhatsAppUrl(
+    locale,
+    draftMessage,
+    whatsappDigits
+  );
+  const directDefaultWhatsappUrl = getWhatsAppUrl(
+    locale,
+    defaultGeneralMsg,
+    whatsappDigits
+  );
 
   return (
     <ConsultationDialogContext.Provider value={{ openDialog, closeDialog }}>

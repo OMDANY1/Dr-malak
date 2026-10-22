@@ -1,7 +1,9 @@
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
 
 const CHROME_PATH =
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
@@ -36,6 +38,9 @@ async function createCdpSession(port) {
   const pending = new Map();
   browserWs.onmessage = (event) => {
     const msg = JSON.parse(event.data);
+    if (msg.method === "Runtime.exceptionThrown") {
+      console.error("  [Chrome Exception]", JSON.stringify(msg.params.exceptionDetails));
+    }
     if (msg.id && pending.has(msg.id)) {
       const { resolve, reject } = pending.get(msg.id);
       pending.delete(msg.id);
@@ -248,7 +253,16 @@ async function main() {
       "1. Verifying Locale & Document Direction lifecycle + Minimal Navigation..."
     );
     await send("Page.navigate", { url: `${TARGET_BASE_URL}/ar` }, sessionId);
-    await sleep(1500);
+    for (let i = 0; i < 30; i++) {
+      const ready = await evaluateJs(
+        send,
+        sessionId,
+        `document.readyState === 'complete' && Boolean(document.querySelector('.ed-menu-trigger-btn'))`
+      );
+      if (ready) break;
+      await sleep(200);
+    }
+    await sleep(800);
 
     let docState = await evaluateJs(
       send,
@@ -969,6 +983,203 @@ async function main() {
       });
     }
 
+    // =========================================================================
+    // TEST 8: Arabic RTL /admin Dashboard, Authentication, Sections & Mobile RTL
+    // =========================================================================
+    console.log(
+      "8. Verifying Arabic RTL /admin Dashboard, Auth Protection, & 9 Editorial Sections..."
+    );
+
+    // 8a. Unauthenticated /api/cms/state must return 401
+    const unauthApiRes = await fetch(`${TARGET_BASE_URL}/api/cms/state`);
+    assert.equal(
+      unauthApiRes.status,
+      401,
+      "Unauthenticated /api/cms/state request must return 401"
+    );
+
+    // 8b. Unauthenticated navigation to /admin redirects to /admin/login with RTL & noindex
+    await send("Page.navigate", { url: `${TARGET_BASE_URL}/admin` }, sessionId);
+    await sleep(1200);
+    const loginPageState = await evaluateJs(
+      send,
+      sessionId,
+      `({
+        path: location.pathname,
+        dir: document.querySelector('.cms-login-shell')?.getAttribute('dir'),
+        lang: document.querySelector('.cms-login-shell')?.getAttribute('lang'),
+        robots: document.querySelector('meta[name="robots"]')?.content || '',
+        hasEmailInput: Boolean(document.querySelector('#cms-login-email')),
+        hasPasswordInput: Boolean(document.querySelector('#cms-login-password')),
+      })`
+    );
+    assert.equal(loginPageState.path, "/admin/login");
+    assert.equal(loginPageState.dir, "rtl");
+    assert.equal(loginPageState.lang, "ar");
+    assert.equal(loginPageState.robots.includes("noindex"), true);
+    assert.equal(loginPageState.hasEmailInput, true);
+    assert.equal(loginPageState.hasPasswordInput, true);
+
+    await captureScreenshot(
+      send,
+      sessionId,
+      "13-admin-login-rtl-1440w.png",
+      { copyToArtifact: true }
+    );
+
+    // 8c. Provision ephemeral owner user for browser verification & clean up in finally
+    const ephemeralEmail = "verify-owner@drmalak.local";
+    const ephemeralPassword = `Verify!${crypto.randomBytes(8).toString("hex")}`;
+    execFileSync(
+      process.execPath,
+      [
+        path.join(process.cwd(), "scripts/provision-admin.mjs"),
+        `--email=${ephemeralEmail}`,
+        `--password=${ephemeralPassword}`,
+        `--name=د. ملاك السيف`,
+        `--role=owner`,
+      ],
+      { stdio: "ignore" }
+    );
+
+    try {
+      // Log in via the /admin/login UI
+      await evaluateJs(
+        send,
+        sessionId,
+        `(() => {
+          const emailEl = document.querySelector('#cms-login-email');
+          const passEl = document.querySelector('#cms-login-password');
+          const setVal = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+          emailEl._valueTracker?.setValue('');
+          setVal.call(emailEl, ${JSON.stringify(ephemeralEmail)});
+          emailEl.dispatchEvent(new Event('input', { bubbles: true }));
+          emailEl.dispatchEvent(new Event('change', { bubbles: true }));
+          passEl._valueTracker?.setValue('');
+          setVal.call(passEl, ${JSON.stringify(ephemeralPassword)});
+          passEl.dispatchEvent(new Event('input', { bubbles: true }));
+          passEl.dispatchEvent(new Event('change', { bubbles: true }));
+          document.querySelector('form.cms-login-form button[type="submit"]').click();
+        })()`
+      );
+      await sleep(2200);
+
+      const dashboardState = await evaluateJs(
+        send,
+        sessionId,
+        `({
+          path: location.pathname,
+          dir: document.querySelector('.cms-admin-shell')?.getAttribute('dir'),
+          navItemCount: document.querySelectorAll('.cms-nav-btn').length,
+        })`
+      );
+      assert.equal(dashboardState.path, "/admin");
+      assert.equal(dashboardState.dir, "rtl");
+      assert.equal(
+        dashboardState.navItemCount,
+        9,
+        `Expected 9 admin navigation sections, got ${dashboardState.navItemCount}`
+      );
+
+      await captureScreenshot(
+        send,
+        sessionId,
+        "14-admin-overview-rtl-1440w.png",
+        { copyToArtifact: true }
+      );
+
+      // Navigate to Homepage editor section
+      await evaluateJs(
+        send,
+        sessionId,
+        `Array.from(document.querySelectorAll('.cms-nav-btn')).find(b => b.textContent.includes('الصفحة الرئيسية'))?.click()`
+      );
+      await sleep(500);
+      await captureScreenshot(
+        send,
+        sessionId,
+        "15-admin-homepage-editor-rtl-1440w.png",
+        { copyToArtifact: true }
+      );
+
+      // Navigate to Articles editor section
+      await evaluateJs(
+        send,
+        sessionId,
+        `Array.from(document.querySelectorAll('.cms-nav-btn')).find(b => b.textContent.includes('المقالات التوعوية'))?.click()`
+      );
+      await sleep(500);
+      await captureScreenshot(
+        send,
+        sessionId,
+        "16-admin-articles-editor-rtl-1440w.png",
+        { copyToArtifact: true }
+      );
+
+      // Navigate to Media library section
+      await evaluateJs(
+        send,
+        sessionId,
+        `Array.from(document.querySelectorAll('.cms-nav-btn')).find(b => b.textContent.includes('مكتبة الوسائط'))?.click()`
+      );
+      await sleep(500);
+      await captureScreenshot(
+        send,
+        sessionId,
+        "17-admin-media-library-rtl-1440w.png",
+        { copyToArtifact: true }
+      );
+
+      // Navigate to Revision history section
+      await evaluateJs(
+        send,
+        sessionId,
+        `Array.from(document.querySelectorAll('.cms-nav-btn')).find(b => b.textContent.includes('سجل الإصدارات'))?.click()`
+      );
+      await sleep(500);
+      await captureScreenshot(
+        send,
+        sessionId,
+        "18-admin-revisions-rtl-1440w.png",
+        { copyToArtifact: true }
+      );
+
+      // Switch to mobile viewport (390x844) and capture RTL mobile admin view
+      await setViewport(390, 844);
+      await evaluateJs(
+        send,
+        sessionId,
+        `Array.from(document.querySelectorAll('.cms-nav-btn')).find(b => b.textContent.includes('نظرة عامة'))?.click()`
+      );
+      await sleep(500);
+      await captureScreenshot(
+        send,
+        sessionId,
+        "19-admin-mobile-rtl-390w.png",
+        { copyToArtifact: true }
+      );
+      console.log(
+        "  [PASS] Arabic RTL /admin Dashboard & all 9 sections verified at 1440w & 390w."
+      );
+    } finally {
+      // Remove ephemeral verification user so no test credentials remain in the database
+      try {
+        const dbPath = path.join(
+          process.cwd(),
+          "content",
+          ".cms-data",
+          "cms.sqlite"
+        );
+        if (fs.existsSync(dbPath)) {
+          const cleanDb = new DatabaseSync(dbPath);
+          cleanDb
+            .prepare("DELETE FROM cms_users WHERE email = ?")
+            .run(ephemeralEmail);
+          cleanDb.close();
+        }
+      } catch {}
+    }
+
     browserWs.close();
     console.log("ALL BROWSER VERIFICATION CHECKS COMPLETED!");
   } finally {
@@ -984,9 +1195,9 @@ async function main() {
 }
 
 setTimeout(() => {
-  console.error("Browser verification watchdog timeout (90s) reached; exiting.");
+  console.error("Browser verification watchdog timeout (120s) reached; exiting.");
   process.exit(1);
-}, 90000).unref();
+}, 120000).unref();
 
 main()
   .then(() => process.exit(0))

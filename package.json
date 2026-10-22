@@ -2,12 +2,17 @@
   "name": "dr-malak-alsaif-website",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
+    "cms:provision-admin": "node scripts/provision-admin.mjs",
+    "cms:import": "node scripts/cms-import.mjs",
     "test": "node tests/unit-regression.test.mjs",
     "test:browser": "node tests/browser-verification.mjs"
   },

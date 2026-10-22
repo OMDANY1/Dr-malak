@@ -1,6 +1,6 @@
 import siteConfigData from "../../content/site-config.json";
 import siteCopyData from "../../content/site-copy.json";
-import { Locale } from "./locales";
+import type { Locale } from "./locales";
 import { formatReadingTime } from "./arabic-search";
 
 export interface SiteConfig {

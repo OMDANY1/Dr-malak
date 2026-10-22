@@ -13,22 +13,32 @@ import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { Reveal } from "@/components/interactive/Reveal";
+import { isDraftPreviewRequest } from "@/lib/cms/auth";
+import { getPublicCmsSnapshot } from "@/lib/cms/db";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ preview?: string }>;
 }
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: PageProps): Promise<Metadata> {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
   if (!isValidLocale(locale)) return {};
   const copy = getCopy(locale);
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
   const alternates = buildPageAlternates(locale, "contact");
 
   return {
     title: copy.contactPage.meta.title,
     description: copy.contactPage.meta.description,
+    ...(previewDrafts
+      ? { robots: { index: false, follow: false } }
+      : {}),
     alternates,
     openGraph: {
       title: copy.contactPage.meta.title,
@@ -50,18 +60,35 @@ export async function generateMetadata({
   };
 }
 
-export default async function ContactPage({ params }: PageProps) {
+export default async function ContactPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : undefined;
 
   if (!isValidLocale(locale)) {
     notFound();
   }
 
   const copy = getCopy(locale);
-  const whatsappUrl = getWhatsAppUrl(locale);
-  const telUrl = getTelUrl();
-  const phone = getPhoneDisplay();
-  const instagramUrl = getInstagramUrl();
+  const previewDrafts = await isDraftPreviewRequest(sp?.preview);
+  const cms = getPublicCmsSnapshot({ previewDrafts });
+  const cs = cms.contactSettings;
+
+  const whatsappUrl = getWhatsAppUrl(locale, undefined, cs.whatsappDigits);
+  const telUrl = getTelUrl(cs.phone);
+  const phone = getPhoneDisplay(cs.phone);
+  const instagramUrl = getInstagramUrl(cs.instagramUrl);
+  const instagramHandle = cs.instagramHandle || "@dralsaifma";
+
+  // Optional editor-entered fields: rendered ONLY when non-empty in the active locale
+  const addressText = (cs.address[locale] || "").trim();
+  const hoursText = (cs.workingHours[locale] || "").trim();
+  const mapUrl = (cs.mapUrl || "").trim();
+  const hasOptionalLocationDetails = Boolean(
+    addressText || hoursText || mapUrl
+  );
 
   return (
     <>
@@ -88,7 +115,11 @@ export default async function ContactPage({ params }: PageProps) {
 
             <div className="ed-red-hero-action-cluster">
               <ConsultationTriggerButton
-                label={copy.contactPage.whatsappCard.action}
+                label={resolveLocalizedText(
+                  cs.bookingCta.primaryLabel,
+                  locale,
+                  copy.contactPage.whatsappCard.action
+                )}
                 topicId="general"
                 variant="ivory"
                 fallbackHref={whatsappUrl}
@@ -202,12 +233,82 @@ export default async function ContactPage({ params }: PageProps) {
                   className="ed-inline-arrow-link ltr-inline"
                   dir="ltr"
                 >
-                  <span>@dralsaifma</span>
+                  <span>{instagramHandle}</span>
                   <span aria-hidden="true">↗</span>
                 </a>
               </div>
             </Reveal>
           </div>
+
+          {/* Optional Address / Hours / Map Link — Rendered ONLY when entered by editor */}
+          {hasOptionalLocationDetails && (
+            <Reveal
+              variant="fade-up"
+              className="ed-contact-optional-details-grid"
+            >
+              {addressText && (
+                <div className="ed-contact-channel-card">
+                  <span className="ed-about-pillar-num">
+                    {locale === "ar" ? "العنوان والموقع" : "Location & Address"}
+                  </span>
+                  <p className="ed-about-pillar-body">{addressText}</p>
+                  {mapUrl && (
+                    <div className="ed-contact-channel-action">
+                      <a
+                        href={mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ed-inline-arrow-link"
+                      >
+                        <span>
+                          {locale === "ar"
+                            ? "عرض الموقع على الخريطة"
+                            : "View on Map"}
+                        </span>
+                        <span aria-hidden="true">
+                          {locale === "ar" ? "↖" : "↗"}
+                        </span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {hoursText && (
+                <div className="ed-contact-channel-card">
+                  <span className="ed-about-pillar-num">
+                    {locale === "ar" ? "أوقات العمل والتنسيق" : "Working Hours"}
+                  </span>
+                  <p className="ed-about-pillar-body">{hoursText}</p>
+                </div>
+              )}
+
+              {!addressText && mapUrl && (
+                <div className="ed-contact-channel-card">
+                  <span className="ed-about-pillar-num">
+                    {locale === "ar" ? "رابط الخريطة" : "Map Link"}
+                  </span>
+                  <div className="ed-contact-channel-action">
+                    <a
+                      href={mapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ed-inline-arrow-link"
+                    >
+                      <span>
+                        {locale === "ar"
+                          ? "عرض الموقع على الخريطة"
+                          : "View on Map"}
+                      </span>
+                      <span aria-hidden="true">
+                        {locale === "ar" ? "↖" : "↗"}
+                      </span>
+                    </a>
+                  </div>
+                </div>
+              )}
+            </Reveal>
+          )}
 
           {/* Pre-Contact Guidelines Ledger */}
           <Reveal variant="fade-up" className="ed-contact-guidelines-box">

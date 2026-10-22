@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { getCopy, siteConfig } from "@/lib/content";
@@ -8,6 +10,8 @@ import {
 } from "@/lib/links";
 import { Locale, localizePath } from "@/lib/locales";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface EditorialFooterProps {
   locale: Locale;
@@ -15,9 +19,27 @@ interface EditorialFooterProps {
 
 export function EditorialFooter({ locale }: EditorialFooterProps) {
   const copy = getCopy(locale);
-  const telUrl = getTelUrl();
-  const phone = getPhoneDisplay();
-  const instagramUrl = getInstagramUrl();
+  const cms = useCmsSnapshot();
+
+  const brandName = cms
+    ? resolveLocalizedText(
+        cms.contactSettings.siteName,
+        locale,
+        siteConfig.name[locale]
+      )
+    : siteConfig.name[locale];
+  const brandSubtitle = cms
+    ? resolveLocalizedText(
+        cms.contactSettings.siteSubtitle,
+        locale,
+        siteConfig.subtitle[locale]
+      )
+    : siteConfig.subtitle[locale];
+
+  const telUrl = getTelUrl(cms?.contactSettings.phone);
+  const phone = getPhoneDisplay(cms?.contactSettings.phone);
+  const instagramUrl = getInstagramUrl(cms?.contactSettings.instagramUrl);
+  const instagramHandle = cms?.contactSettings.instagramHandle || "@dralsaifma";
 
   const navLinks = [
     { label: copy.nav.home, href: localizePath(locale, "") },
@@ -38,12 +60,8 @@ export function EditorialFooter({ locale }: EditorialFooterProps) {
               href={localizePath(locale, "")}
               className="ed-red-footer-logo"
             >
-              <span className="brand-name ed-red-footer-name">
-                {siteConfig.name[locale]}
-              </span>
-              <span className="ed-red-footer-subtitle">
-                {siteConfig.subtitle[locale]}
-              </span>
+              <span className="brand-name ed-red-footer-name">{brandName}</span>
+              <span className="ed-red-footer-subtitle">{brandSubtitle}</span>
             </Link>
             <p className="ed-red-footer-disclaimer">{copy.footer.disclaimer}</p>
           </div>
@@ -85,7 +103,7 @@ export function EditorialFooter({ locale }: EditorialFooterProps) {
                 className="ed-red-footer-social ltr-inline"
                 dir="ltr"
               >
-                @dralsaifma ↗
+                {instagramHandle} ↗
               </a>
               <div className="ed-red-footer-lang-wrap">
                 <LanguageSwitcher
@@ -101,7 +119,9 @@ export function EditorialFooter({ locale }: EditorialFooterProps) {
 
         {/* Lower Band: Architectural Rule + Copyright */}
         <div className="ed-red-footer-bottom">
-          <p className="ed-red-footer-copy">{copy.footer.copyright}</p>
+          <p className="ed-red-footer-copy">
+            {brandName} — {brandSubtitle}
+          </p>
           <Link
             href={localizePath(locale, "privacy")}
             className="ed-red-footer-privacy"

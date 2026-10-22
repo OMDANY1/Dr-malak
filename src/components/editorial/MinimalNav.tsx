@@ -13,6 +13,8 @@ import {
 import { Locale, localizePath } from "@/lib/locales";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
+import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface MinimalNavProps {
   locale: Locale;
@@ -20,6 +22,7 @@ interface MinimalNavProps {
 
 export function MinimalNav({ locale }: MinimalNavProps) {
   const copy = getCopy(locale);
+  const cms = useCmsSnapshot();
   const pathname = usePathname() || `/${locale}`;
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,10 +31,30 @@ export function MinimalNav({ locale }: MinimalNavProps) {
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  const whatsappUrl = getWhatsAppUrl(locale);
-  const telUrl = getTelUrl();
-  const phone = getPhoneDisplay();
-  const instagramUrl = getInstagramUrl();
+  const brandName = cms
+    ? resolveLocalizedText(
+        cms.contactSettings.siteName,
+        locale,
+        siteConfig.name[locale]
+      )
+    : siteConfig.name[locale];
+  const brandSubtitle = cms
+    ? resolveLocalizedText(
+        cms.contactSettings.siteSubtitle,
+        locale,
+        siteConfig.subtitle[locale]
+      )
+    : siteConfig.subtitle[locale];
+
+  const whatsappUrl = getWhatsAppUrl(
+    locale,
+    undefined,
+    cms?.contactSettings.whatsappDigits
+  );
+  const telUrl = getTelUrl(cms?.contactSettings.phone);
+  const phone = getPhoneDisplay(cms?.contactSettings.phone);
+  const instagramUrl = getInstagramUrl(cms?.contactSettings.instagramUrl);
+  const instagramHandle = cms?.contactSettings.instagramHandle || "@dralsaifma";
 
   const navItems = [
     { key: "home", num: "01", label: copy.nav.home, href: localizePath(locale, "") },
@@ -71,12 +94,10 @@ export function MinimalNav({ locale }: MinimalNavProps) {
     }
   }, []);
 
-  // Close menu when route changes
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
 
-  // Subtle scroll state for minimal bar
   useEffect(() => {
     const onScroll = () => {
       setIsScrolled(window.scrollY > 24);
@@ -86,7 +107,6 @@ export function MinimalNav({ locale }: MinimalNavProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Focus trap, Escape key, and body scroll lock when full-screen menu is open
   useEffect(() => {
     if (!isOpen) return;
 
@@ -151,13 +171,9 @@ export function MinimalNav({ locale }: MinimalNavProps) {
         <div className="ed-minimal-header-inner">
           {/* Doctor's existing brand identity */}
           <Link href={localizePath(locale, "")} className="ed-brand-lockup">
-            <span className="brand-name ed-brand-name">
-              {siteConfig.name[locale]}
-            </span>
+            <span className="brand-name ed-brand-name">{brandName}</span>
             <span className="ed-brand-sep" aria-hidden="true" />
-            <span className="ed-brand-subtitle">
-              {siteConfig.subtitle[locale]}
-            </span>
+            <span className="ed-brand-subtitle">{brandSubtitle}</span>
           </Link>
 
           {/* Minimal Actions: Language Access + Consultation Action + Clearly Labeled Menu Button */}
@@ -224,13 +240,9 @@ export function MinimalNav({ locale }: MinimalNavProps) {
               className="ed-brand-lockup"
               onClick={() => closeMenu(false)}
             >
-              <span className="brand-name ed-brand-name">
-                {siteConfig.name[locale]}
-              </span>
+              <span className="brand-name ed-brand-name">{brandName}</span>
               <span className="ed-brand-sep" aria-hidden="true" />
-              <span className="ed-brand-subtitle">
-                {siteConfig.subtitle[locale]}
-              </span>
+              <span className="ed-brand-subtitle">{brandSubtitle}</span>
             </Link>
 
             <div className="ed-fullscreen-menu-top-actions">
@@ -346,7 +358,7 @@ export function MinimalNav({ locale }: MinimalNavProps) {
                       className="ed-fullscreen-social ltr-inline"
                       dir="ltr"
                     >
-                      @dralsaifma ↗
+                      {instagramHandle} ↗
                     </a>
                   </div>
                 </div>

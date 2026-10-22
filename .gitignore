@@ -2,3 +2,6 @@ node_modules
 .next
 .vercel
 .env*
+content/.cms-data/
+public/uploads/cms/
+docs/screenshots/verified/chrome-profile/

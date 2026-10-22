@@ -1,4 +1,4 @@
-import { Locale } from "./locales";
+import type { Locale } from "./locales";
 
 /**
  * Normalizes Arabic and Latin text for resilient search matching:

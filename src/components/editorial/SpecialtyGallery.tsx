@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { getCopy } from "@/lib/content";
 import { getWhatsAppUrl } from "@/lib/links";
 import { Locale, localizePath } from "@/lib/locales";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
 import { Reveal } from "@/components/interactive/Reveal";
+import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface SpecialtyGalleryProps {
   locale: Locale;
@@ -14,8 +16,70 @@ interface SpecialtyGalleryProps {
 
 export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
   const copy = getCopy(locale);
-  const items = copy.specialtiesSection.items;
+  const cms = useCmsSnapshot();
   const specialtiesPageHref = localizePath(locale, "specialties");
+
+  const sectionConfig = cms?.homepage.sections.find(
+    (s) => s.id === "specialties"
+  );
+  const sectionEyebrow = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.eyebrow,
+        locale,
+        copy.specialtiesSection.eyebrow
+      )
+    : copy.specialtiesSection.eyebrow;
+  const sectionTitle = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.title,
+        locale,
+        copy.specialtiesSection.title
+      )
+    : copy.specialtiesSection.title;
+  const sectionIntro = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.supportingText,
+        locale,
+        copy.specialtiesSection.intro
+      )
+    : copy.specialtiesSection.intro;
+
+  const items = useMemo(() => {
+    if (!cms || cms.specialties.length === 0) {
+      return copy.specialtiesSection.items.map((item) => ({
+        ...item,
+        focalPoint: { x: 50, y: 50 },
+      }));
+    }
+    return cms.specialties.map((spec, idx) => {
+      const c = spec.content;
+      const numStr =
+        c.numberLabel || String(idx + 1).padStart(2, "0");
+      return {
+        id: spec.slug,
+        number: numStr,
+        title: resolveLocalizedText(c.title, locale, spec.slug),
+        tabLabel: resolveLocalizedText(c.title, locale, spec.slug),
+        summary: resolveLocalizedText(c.introduction, locale, ""),
+        detail: resolveLocalizedText(c.fullContent, locale, ""),
+        assessmentNote: resolveLocalizedText(c.assessmentNote, locale, ""),
+        visualCaption: resolveLocalizedText(c.visualCaption, locale, ""),
+        image: c.coverImage,
+        imageAlt: resolveLocalizedText(c.imageAlt, locale, ""),
+        focalPoint: c.focalPoint || { x: 50, y: 50 },
+        whatsappEnquiryMessage: resolveLocalizedText(
+          c.whatsappMessage,
+          locale,
+          ""
+        ),
+        ctaLabel: resolveLocalizedText(
+          c.ctaLabel,
+          locale,
+          copy.hero.primary
+        ),
+      };
+    });
+  }, [cms, copy, locale]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const lastTriggerRef = useRef<HTMLElement | null>(null);
@@ -45,7 +109,6 @@ export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
     }
   }, []);
 
-  // Keyboard support (Escape + Tab focus trap) and scroll lock when detail panel is open
   useEffect(() => {
     if (!selectedId) return;
 
@@ -117,18 +180,16 @@ export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
                 01
               </span>
               <span className="ed-eyebrow-rule" aria-hidden="true" />
-              <span className="ed-eyebrow-label">
-                {copy.specialtiesSection.eyebrow}
-              </span>
+              <span className="ed-eyebrow-label">{sectionEyebrow}</span>
             </div>
 
             <h2 id="specialties-heading" className="ed-section-title">
-              {copy.specialtiesSection.title}
+              {sectionTitle}
             </h2>
           </div>
 
           <div className="ed-specialty-header-aside">
-            <p className="ed-section-intro">{copy.specialtiesSection.intro}</p>
+            <p className="ed-section-intro">{sectionIntro}</p>
             <Link
               href={specialtiesPageHref}
               className="ed-inline-arrow-link"
@@ -169,7 +230,9 @@ export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
                       aria-expanded={isSelected}
                       aria-controls="ed-specialty-detail-panel"
                       aria-label={`${item.title} — ${
-                        locale === "ar" ? "عرض النبذة التفصيلية" : "Open specialty details"
+                        locale === "ar"
+                          ? "عرض النبذة التفصيلية"
+                          : "Open specialty details"
                       }`}
                       onClick={(e) => openDetailPanel(item.id, e.currentTarget)}
                     >
@@ -182,6 +245,9 @@ export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
                           loading="eager"
                           decoding="async"
                           className="ed-gallery-img"
+                          style={{
+                            objectPosition: `${item.focalPoint.x}% ${item.focalPoint.y}%`,
+                          }}
                         />
                         <span
                           className="ed-gallery-index-tag"
@@ -202,7 +268,7 @@ export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
                       </span>
                       <span className="ed-eyebrow-rule" aria-hidden="true" />
                       <span className="ed-gallery-caption-tag">
-                        {copy.specialtiesSection.eyebrow}
+                        {sectionEyebrow}
                       </span>
                     </div>
 
@@ -287,9 +353,7 @@ export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
                   {activeItem.number} / 0{items.length}
                 </span>
                 <span className="ed-eyebrow-rule" aria-hidden="true" />
-                <span className="ed-eyebrow-label">
-                  {copy.specialtiesSection.eyebrow}
-                </span>
+                <span className="ed-eyebrow-label">{sectionEyebrow}</span>
               </div>
 
               <button
@@ -386,7 +450,8 @@ export function SpecialtyGallery({ locale }: SpecialtyGalleryProps) {
                     variant="primary"
                     fallbackHref={getWhatsAppUrl(
                       locale,
-                      activeItem.whatsappEnquiryMessage
+                      activeItem.whatsappEnquiryMessage,
+                      cms?.contactSettings.whatsappDigits
                     )}
                     onTrigger={() => closeDetailPanel(false)}
                   />

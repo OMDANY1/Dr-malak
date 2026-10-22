@@ -6,6 +6,8 @@ import { getWhatsAppUrl } from "@/lib/links";
 import { Locale } from "@/lib/locales";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
 import { Reveal } from "@/components/interactive/Reveal";
+import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
+import { resolveLocalizedText } from "@/lib/cms/sanitize";
 
 interface InteractiveConsultationStepsProps {
   locale: Locale;
@@ -15,8 +17,36 @@ export function InteractiveConsultationSteps({
   locale,
 }: InteractiveConsultationStepsProps) {
   const copy = getCopy(locale);
+  const cms = useCmsSnapshot();
   const steps = copy.journeySection.steps;
-  const whatsappUrl = getWhatsAppUrl(locale);
+  const whatsappUrl = getWhatsAppUrl(
+    locale,
+    undefined,
+    cms?.contactSettings.whatsappDigits
+  );
+
+  const sectionConfig = cms?.homepage.sections.find((s) => s.id === "steps");
+  const sectionEyebrow = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.eyebrow,
+        locale,
+        copy.journeySection.eyebrow
+      )
+    : copy.journeySection.eyebrow;
+  const sectionTitle = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.title,
+        locale,
+        copy.journeySection.title
+      )
+    : copy.journeySection.title;
+  const sectionSubtitle = sectionConfig
+    ? resolveLocalizedText(
+        sectionConfig.supportingText,
+        locale,
+        copy.journeySection.subtitle
+      )
+    : copy.journeySection.subtitle;
 
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const stepBtnRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -65,29 +95,25 @@ export function InteractiveConsultationSteps({
                   03
                 </span>
                 <span className="ed-eyebrow-rule" aria-hidden="true" />
-                <span className="ed-eyebrow-label">
-                  {copy.journeySection.eyebrow}
-                </span>
+                <span className="ed-eyebrow-label">{sectionEyebrow}</span>
               </div>
 
               <h2
                 id="consultation-steps-heading"
                 className="ed-section-title"
               >
-                {copy.journeySection.title}
+                {sectionTitle}
               </h2>
             </div>
 
-            <p className="ed-steps-header-subtitle">
-              {copy.journeySection.subtitle}
-            </p>
+            <p className="ed-steps-header-subtitle">{sectionSubtitle}</p>
           </div>
 
           {/* Three Numbered Step Controls (Understandable with or without animation) */}
           <div
             className="ed-steps-controls-bar"
             role="tablist"
-            aria-label={copy.journeySection.title}
+            aria-label={sectionTitle}
           >
             {steps.map((step, idx) => {
               const isSelected = idx === activeIndex;
@@ -136,9 +162,7 @@ export function InteractiveConsultationSteps({
                   {activeStep.number} / 0{steps.length}
                 </span>
                 <span className="ed-eyebrow-rule" aria-hidden="true" />
-                <span className="ed-eyebrow-label">
-                  {copy.journeySection.eyebrow}
-                </span>
+                <span className="ed-eyebrow-label">{sectionEyebrow}</span>
               </div>
 
               <h3 className="ed-steps-stage-title">{activeStep.title}</h3>
