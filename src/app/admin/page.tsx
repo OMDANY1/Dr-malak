@@ -2,12 +2,14 @@ import React from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CMS_SESSION_COOKIE, verifySessionToken } from "@/lib/cms/auth";
+import { ensureSupabasePulled } from "@/lib/cms/cloud-sync";
 import { getAdminCmsState, getCmsUserByEmail } from "@/lib/cms/db";
 import { AdminDashboardClient } from "@/components/admin/AdminDashboardClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
+  await ensureSupabasePulled();
   const cookieStore = await cookies();
   const token = cookieStore.get(CMS_SESSION_COOKIE)?.value;
   const payload = verifySessionToken(token);

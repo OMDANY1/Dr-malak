@@ -3,12 +3,13 @@ import {
   handleCmsApiError,
   jsonResponse,
   requireAuthenticatedCmsUser,
+  syncCmsStateToCloud,
 } from "@/lib/cms/api-helpers";
 import { saveArticleDraft } from "@/lib/cms/db";
 
 export async function POST(request: NextRequest) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const body = (await request.json()) as {
       id?: string;
       draft?: unknown;
@@ -22,6 +23,8 @@ export async function POST(request: NextRequest) {
       { email: user.email, role: user.role },
       body.summary
     );
+
+    await syncCmsStateToCloud();
 
     return jsonResponse({
       article,

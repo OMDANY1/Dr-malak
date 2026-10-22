@@ -2497,3 +2497,209 @@ export function getPublicCmsSnapshot(options?: {
     };
   }
 }
+
+export interface CmsRawDatabaseBundle {
+  version: 1;
+  exportedAt: string;
+  cms_users: Array<Record<string, unknown>>;
+  cms_documents: Array<Record<string, unknown>>;
+  cms_specialties: Array<Record<string, unknown>>;
+  cms_articles: Array<Record<string, unknown>>;
+  cms_media_assets: Array<Record<string, unknown>>;
+  cms_redirects: Array<Record<string, unknown>>;
+  cms_revisions: Array<Record<string, unknown>>;
+}
+
+export function exportDatabaseBundle(): CmsRawDatabaseBundle {
+  const db = getDb();
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    cms_users: db.prepare("SELECT * FROM cms_users").all() as Array<
+      Record<string, unknown>
+    >,
+    cms_documents: db.prepare("SELECT * FROM cms_documents").all() as Array<
+      Record<string, unknown>
+    >,
+    cms_specialties: db.prepare("SELECT * FROM cms_specialties").all() as Array<
+      Record<string, unknown>
+    >,
+    cms_articles: db.prepare("SELECT * FROM cms_articles").all() as Array<
+      Record<string, unknown>
+    >,
+    cms_media_assets: db
+      .prepare("SELECT * FROM cms_media_assets")
+      .all() as Array<Record<string, unknown>>,
+    cms_redirects: db.prepare("SELECT * FROM cms_redirects").all() as Array<
+      Record<string, unknown>
+    >,
+    cms_revisions: db
+      .prepare("SELECT * FROM cms_revisions ORDER BY created_at DESC LIMIT 200")
+      .all() as Array<Record<string, unknown>>,
+  };
+}
+
+export function importDatabaseBundle(bundle: CmsRawDatabaseBundle): void {
+  if (!bundle || bundle.version !== 1) return;
+  const db = getDb();
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    if (Array.isArray(bundle.cms_users)) {
+      db.exec("DELETE FROM cms_users");
+      const stmt = db.prepare(
+        `INSERT INTO cms_users (id, email, password_hash, display_name, role, is_active, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      for (const r of bundle.cms_users) {
+        stmt.run(
+          String(r.id),
+          String(r.email),
+          String(r.password_hash),
+          String(r.display_name),
+          String(r.role),
+          Number(r.is_active ?? 1),
+          String(r.created_at),
+          String(r.updated_at)
+        );
+      }
+    }
+
+    if (Array.isArray(bundle.cms_documents) && bundle.cms_documents.length > 0) {
+      db.exec("DELETE FROM cms_documents");
+      const stmt = db.prepare(
+        `INSERT INTO cms_documents (key, draft_data, published_data, published_at, updated_at, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      );
+      for (const r of bundle.cms_documents) {
+        stmt.run(
+          String(r.key),
+          String(r.draft_data),
+          String(r.published_data),
+          r.published_at ? String(r.published_at) : null,
+          String(r.updated_at),
+          r.updated_by ? String(r.updated_by) : null
+        );
+      }
+    }
+
+    if (Array.isArray(bundle.cms_specialties) && bundle.cms_specialties.length > 0) {
+      db.exec("DELETE FROM cms_specialties");
+      const stmt = db.prepare(
+        `INSERT INTO cms_specialties (id, slug, display_order, status, draft_data, published_data, published_at, updated_at, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      for (const r of bundle.cms_specialties) {
+        stmt.run(
+          String(r.id),
+          String(r.slug),
+          Number(r.display_order ?? 1),
+          String(r.status),
+          String(r.draft_data),
+          r.published_data ? String(r.published_data) : null,
+          r.published_at ? String(r.published_at) : null,
+          String(r.updated_at),
+          r.updated_by ? String(r.updated_by) : null
+        );
+      }
+    }
+
+    if (Array.isArray(bundle.cms_articles) && bundle.cms_articles.length > 0) {
+      db.exec("DELETE FROM cms_articles");
+      const stmt = db.prepare(
+        `INSERT INTO cms_articles (id, slug, translation_key, category, status, draft_data, published_data, published_at, updated_at, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      for (const r of bundle.cms_articles) {
+        stmt.run(
+          String(r.id),
+          String(r.slug),
+          String(r.translation_key),
+          String(r.category),
+          String(r.status),
+          String(r.draft_data),
+          r.published_data ? String(r.published_data) : null,
+          r.published_at ? String(r.published_at) : null,
+          String(r.updated_at),
+          r.updated_by ? String(r.updated_by) : null
+        );
+      }
+    }
+
+    if (Array.isArray(bundle.cms_media_assets) && bundle.cms_media_assets.length > 0) {
+      db.exec("DELETE FROM cms_media_assets");
+      const stmt = db.prepare(
+        `INSERT INTO cms_media_assets (
+          id, filename, original_name, mime_type, size_bytes, width, height,
+          alt_text_ar, alt_text_en, focal_x, focal_y, is_public,
+          storage_bucket, storage_path, public_url, uploaded_by, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      for (const r of bundle.cms_media_assets) {
+        stmt.run(
+          String(r.id),
+          String(r.filename),
+          String(r.original_name),
+          String(r.mime_type),
+          Number(r.size_bytes ?? 0),
+          Number(r.width ?? 1200),
+          Number(r.height ?? 800),
+          String(r.alt_text_ar ?? ""),
+          String(r.alt_text_en ?? ""),
+          Number(r.focal_x ?? 50),
+          Number(r.focal_y ?? 50),
+          Number(r.is_public ?? 0),
+          String(r.storage_bucket ?? "private"),
+          String(r.storage_path ?? ""),
+          String(r.public_url ?? ""),
+          r.uploaded_by ? String(r.uploaded_by) : null,
+          String(r.created_at),
+          String(r.updated_at)
+        );
+      }
+    }
+
+    if (Array.isArray(bundle.cms_redirects)) {
+      db.exec("DELETE FROM cms_redirects");
+      const stmt = db.prepare(
+        `INSERT INTO cms_redirects (id, entity_type, from_slug, to_slug, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      );
+      for (const r of bundle.cms_redirects) {
+        stmt.run(
+          String(r.id),
+          String(r.entity_type),
+          String(r.from_slug),
+          String(r.to_slug),
+          String(r.created_at)
+        );
+      }
+    }
+
+    if (Array.isArray(bundle.cms_revisions)) {
+      db.exec("DELETE FROM cms_revisions");
+      const stmt = db.prepare(
+        `INSERT INTO cms_revisions (id, entity_type, entity_id, entity_title, action, snapshot, summary, actor_email, actor_role, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      for (const r of bundle.cms_revisions) {
+        stmt.run(
+          String(r.id),
+          String(r.entity_type),
+          String(r.entity_id),
+          String(r.entity_title),
+          String(r.action),
+          String(r.snapshot),
+          String(r.summary),
+          String(r.actor_email),
+          String(r.actor_role),
+          String(r.created_at)
+        );
+      }
+    }
+
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}

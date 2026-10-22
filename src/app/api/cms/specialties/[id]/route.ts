@@ -5,6 +5,7 @@ import {
   requireAuthenticatedCmsUser,
   requireOwnerCmsUser,
   revalidatePublicSite,
+  syncCmsStateToCloud,
 } from "@/lib/cms/api-helpers";
 import {
   publishSpecialty,
@@ -17,7 +18,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const { id } = await context.params;
     const body = (await request.json()) as {
       draft?: unknown;
@@ -33,6 +34,8 @@ export async function PUT(
       body.summary
     );
 
+    await syncCmsStateToCloud();
+
     return jsonResponse({
       specialty,
       message: "تم حفظ مسودة التخصص بنجاح.",
@@ -47,7 +50,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = requireOwnerCmsUser(request);
+    const user = await requireOwnerCmsUser(request);
     const { id } = await context.params;
     const body = (await request.json().catch(() => ({}))) as {
       action?: "publish" | "unpublish";
@@ -61,6 +64,7 @@ export async function POST(
         email: user.email,
         role: user.role,
       });
+      await syncCmsStateToCloud();
       revalidatePublicSite();
       return jsonResponse({
         specialty,
@@ -76,6 +80,7 @@ export async function POST(
       body.summary
     );
 
+    await syncCmsStateToCloud();
     revalidatePublicSite();
 
     return jsonResponse({

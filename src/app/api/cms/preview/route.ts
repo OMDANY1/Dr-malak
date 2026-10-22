@@ -11,7 +11,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const body = (await request.json().catch(() => ({}))) as {
       enable?: boolean;
       targetPath?: string;
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const token = signDraftPreviewToken(user.email, user.role);
     const url = request.nextUrl.clone();
     url.pathname = safeRedirect.split("?")[0];

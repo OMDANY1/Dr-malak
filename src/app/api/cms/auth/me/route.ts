@@ -7,7 +7,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     return jsonResponse({ authenticated: true, user });
   } catch (err) {
     return handleCmsApiError(err);

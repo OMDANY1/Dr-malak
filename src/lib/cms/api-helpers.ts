@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { CMS_SESSION_COOKIE, verifySessionToken } from "./auth";
+import { ensureSupabasePulled, syncStateToSupabase } from "./cloud-sync";
 import { CmsError, getCmsUserByEmail } from "./db";
 import { CmsUser } from "./types";
 
@@ -43,7 +44,10 @@ export function handleCmsApiError(err: unknown): NextResponse {
 /**
  * Verifies the request's signed session cookie and ensures the user still exists and is active in DB.
  */
-export function requireAuthenticatedCmsUser(request: NextRequest): CmsUser {
+export async function requireAuthenticatedCmsUser(
+  request: NextRequest
+): Promise<CmsUser> {
+  await ensureSupabasePulled();
   const token = request.cookies.get(CMS_SESSION_COOKIE)?.value;
   const payload = verifySessionToken(token);
   if (!payload) {
@@ -66,8 +70,10 @@ export function requireAuthenticatedCmsUser(request: NextRequest): CmsUser {
   return dbUser;
 }
 
-export function requireOwnerCmsUser(request: NextRequest): CmsUser {
-  const user = requireAuthenticatedCmsUser(request);
+export async function requireOwnerCmsUser(
+  request: NextRequest
+): Promise<CmsUser> {
+  const user = await requireAuthenticatedCmsUser(request);
   if (user.role !== "owner") {
     throw new CmsError(
       "هذا الإجراء متاح فقط لدور المالك (Owner). حساب المحرر (Editor) مخصص لإعداد المسودات ومعاينتها.",
@@ -76,6 +82,10 @@ export function requireOwnerCmsUser(request: NextRequest): CmsUser {
     );
   }
   return user;
+}
+
+export async function syncCmsStateToCloud(): Promise<void> {
+  await syncStateToSupabase();
 }
 
 /**

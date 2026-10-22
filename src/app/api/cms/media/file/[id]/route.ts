@@ -2,12 +2,17 @@ import fs from "fs";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { CMS_PREVIEW_COOKIE, CMS_SESSION_COOKIE, verifyDraftPreviewToken, verifySessionToken } from "@/lib/cms/auth";
+import {
+  downloadMediaFromSupabaseIfNeeded,
+  ensureSupabasePulled,
+} from "@/lib/cms/cloud-sync";
 import { getMediaAssetById, getPrivateMediaDir, getPublicUploadsDir } from "@/lib/cms/db";
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  await ensureSupabasePulled();
   const { id } = await context.params;
   const asset = getMediaAssetById(id);
 
@@ -55,12 +60,21 @@ export async function GET(
     }
   }
 
-  if (!foundPath) {
+  let buffer: Buffer | null = null;
+  if (foundPath) {
+    buffer = fs.readFileSync(foundPath);
+  } else {
+    buffer = await downloadMediaFromSupabaseIfNeeded(
+      asset.filename,
+      asset.isPublic
+    );
+  }
+
+  if (!buffer) {
     return new NextResponse("Media binary not found", { status: 404 });
   }
 
-  const buffer = fs.readFileSync(foundPath);
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
       "Content-Type": asset.mimeType || "image/jpeg",

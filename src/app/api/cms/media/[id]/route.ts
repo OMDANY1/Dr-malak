@@ -4,7 +4,9 @@ import {
   jsonResponse,
   requireAuthenticatedCmsUser,
   requireOwnerCmsUser,
+  syncCmsStateToCloud,
 } from "@/lib/cms/api-helpers";
+import { uploadBufferToSupabaseBucket } from "@/lib/cms/cloud-sync";
 import { deleteMediaAsset, updateMediaAsset } from "@/lib/cms/db";
 
 export async function PATCH(
@@ -12,7 +14,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const { id } = await context.params;
     const body = (await request.json()) as {
       altText?: { ar: string; en: string };
@@ -40,6 +42,16 @@ export async function PATCH(
       actor: { email: user.email, role: user.role },
     });
 
+    if (replaceBuffer) {
+      await uploadBufferToSupabaseBucket(
+        asset.isPublic ? "cms-public-media" : "cms-private-media",
+        `uploads/${asset.filename}`,
+        replaceBuffer,
+        asset.mimeType
+      );
+    }
+    await syncCmsStateToCloud();
+
     return jsonResponse({
       asset,
       message: "تم تحديث بيانات الصورة بنجاح.",
@@ -54,12 +66,14 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = requireOwnerCmsUser(request);
+    const user = await requireOwnerCmsUser(request);
     const { id } = await context.params;
     const result = deleteMediaAsset(id, {
       email: user.email,
       role: user.role,
     });
+
+    await syncCmsStateToCloud();
 
     return jsonResponse({
       ...result,

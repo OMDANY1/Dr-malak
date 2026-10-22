@@ -16,6 +16,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
+// Load .env.local if present
+const envLocalPath = path.join(process.cwd(), ".env.local");
+if (fs.existsSync(envLocalPath)) {
+  const lines = fs.readFileSync(envLocalPath, "utf-8").split(/\r?\n/);
+  for (const line of lines) {
+    const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+    if (m && !process.env[m[1]]) {
+      process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+    }
+  }
+}
+
 function parseArgs(argv) {
   const result = {};
   for (const arg of argv) {
@@ -123,3 +135,54 @@ if (existing) {
   );
 }
 db.close();
+
+// If Supabase credentials are configured and not running against an isolated temp DB, sync to Supabase Cloud
+if (
+  !process.env.CMS_SQLITE_PATH &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+) {
+  const supUrl = process.env.NEXT_PUBLIC_SUPABASE_URL.replace(
+    /\/rest\/v1\/?$/i,
+    ""
+  ).replace(/\/+$/, "");
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  try {
+    // 1. Pull existing cloud bundle if present, merge user, and push back
+    const getRes = await fetch(
+      `${supUrl}/storage/v1/object/cms-private-media/cms-state/state-bundle.json`,
+      {
+        headers: { apikey: secret, Authorization: `Bearer ${secret}` },
+      }
+    );
+    if (getRes.ok) {
+      const bundle = await getRes.json();
+      const reopenDb = new DatabaseSync(dbPath);
+      const localUser = reopenDb
+        .prepare("SELECT * FROM cms_users WHERE email = ?")
+        .get(email);
+      reopenDb.close();
+      if (bundle && Array.isArray(bundle.cms_users) && localUser) {
+        bundle.cms_users = bundle.cms_users.filter((u) => u.email !== email);
+        bundle.cms_users.push(localUser);
+        bundle.exportedAt = new Date().toISOString();
+        await fetch(
+          `${supUrl}/storage/v1/object/cms-private-media/cms-state/state-bundle.json`,
+          {
+            method: "POST",
+            headers: {
+              apikey: secret,
+              Authorization: `Bearer ${secret}`,
+              "Content-Type": "application/json",
+              "x-upsert": "true",
+            },
+            body: JSON.stringify(bundle),
+          }
+        );
+        console.log("[CMS Cloud] تمت مزامنة حساب المسؤول مع سحابة Supabase بنجاح.");
+      }
+    }
+  } catch (err) {
+    console.warn("[CMS Cloud] تعذرت المزامنة الاختيارية مع السحابة:", err.message);
+  }
+}

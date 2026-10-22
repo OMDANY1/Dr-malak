@@ -4,10 +4,12 @@ import {
   handleCmsApiError,
   jsonResponse,
 } from "@/lib/cms/api-helpers";
+import { ensureSupabasePulled } from "@/lib/cms/cloud-sync";
 import { authenticateCmsUser, CmsError } from "@/lib/cms/db";
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureSupabasePulled(true);
     const body = (await request.json()) as {
       email?: string;
       password?: string;

@@ -191,6 +191,8 @@ export async function isDraftPreviewRequest(
   previewQueryParam?: string
 ): Promise<boolean> {
   try {
+    const { ensureSupabasePulled } = await import("./cloud-sync");
+    await ensureSupabasePulled();
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get(CMS_SESSION_COOKIE)?.value;

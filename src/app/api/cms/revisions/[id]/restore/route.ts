@@ -3,6 +3,7 @@ import {
   handleCmsApiError,
   jsonResponse,
   requireOwnerCmsUser,
+  syncCmsStateToCloud,
 } from "@/lib/cms/api-helpers";
 import { restoreRevisionToDraft } from "@/lib/cms/db";
 
@@ -11,12 +12,14 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = requireOwnerCmsUser(request);
+    const user = await requireOwnerCmsUser(request);
     const { id } = await context.params;
     const result = restoreRevisionToDraft(id, {
       email: user.email,
       role: user.role,
     });
+
+    await syncCmsStateToCloud();
 
     return jsonResponse({
       ...result,

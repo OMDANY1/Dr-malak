@@ -5,6 +5,7 @@ import {
   requireAuthenticatedCmsUser,
   requireOwnerCmsUser,
   revalidatePublicSite,
+  syncCmsStateToCloud,
 } from "@/lib/cms/api-helpers";
 import {
   CmsError,
@@ -26,7 +27,7 @@ export async function PUT(
   context: { params: Promise<{ key: string }> }
 ) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const { key } = await context.params;
     if (!VALID_KEYS.has(key)) {
       throw new CmsError("مفتاح المستند غير معروف.", 404, "NOT_FOUND");
@@ -44,6 +45,8 @@ export async function PUT(
       body.summary
     );
 
+    await syncCmsStateToCloud();
+
     return jsonResponse({
       key,
       draft: saved,
@@ -59,7 +62,7 @@ export async function POST(
   context: { params: Promise<{ key: string }> }
 ) {
   try {
-    const user = requireOwnerCmsUser(request);
+    const user = await requireOwnerCmsUser(request);
     const { key } = await context.params;
     if (!VALID_KEYS.has(key)) {
       throw new CmsError("مفتاح المستند غير معروف.", 404, "NOT_FOUND");
@@ -77,6 +80,7 @@ export async function POST(
       body.summary
     );
 
+    await syncCmsStateToCloud();
     revalidatePublicSite();
 
     return jsonResponse({

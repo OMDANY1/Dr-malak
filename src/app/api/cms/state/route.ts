@@ -8,7 +8,7 @@ import { getAdminCmsState } from "@/lib/cms/db";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const state = getAdminCmsState(user);
     return jsonResponse(state);
   } catch (err) {

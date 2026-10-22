@@ -3,7 +3,9 @@ import {
   handleCmsApiError,
   jsonResponse,
   requireAuthenticatedCmsUser,
+  syncCmsStateToCloud,
 } from "@/lib/cms/api-helpers";
+import { uploadBufferToSupabaseBucket } from "@/lib/cms/cloud-sync";
 import {
   CmsError,
   listMediaAssets,
@@ -12,7 +14,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    requireAuthenticatedCmsUser(request);
+    await requireAuthenticatedCmsUser(request);
     const mediaAssets = listMediaAssets();
     return jsonResponse({ mediaAssets });
   } catch (err) {
@@ -22,7 +24,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = requireAuthenticatedCmsUser(request);
+    const user = await requireAuthenticatedCmsUser(request);
     const contentType = request.headers.get("content-type") || "";
 
     let buffer: Buffer;
@@ -84,6 +86,14 @@ export async function POST(request: NextRequest) {
       focalPoint: { x: focalX, y: focalY },
       actor: { email: user.email, role: user.role },
     });
+
+    await uploadBufferToSupabaseBucket(
+      "cms-private-media",
+      `uploads/${asset.filename}`,
+      buffer,
+      asset.mimeType
+    );
+    await syncCmsStateToCloud();
 
     return jsonResponse({
       asset,
