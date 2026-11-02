@@ -9,7 +9,13 @@
 | `public/images/generated/article-questions-to-discuss.jpg` | Generated supporting asset (`16:9`) | Editorial cover for draft article `questions-to-discuss` |
 | `brand/references/art-direction.png` | Existing October 1 generated direction board | Visual reference only |
 | `brand/references/social-preview.png` | Existing October 1 social direction preview | Visual reference only |
-| `brand/logo-reference/malak-logo-reference-only.png` | Existing October 7 generated transparent logo version | Reference only; spelling error (`SURGION`) |
+| `brand/logo-reference/malak-logo-reference-only.png` | Existing October 7 generated transparent logo version | Superseded reference only; had spelling error (`SURGION`) |
+| `public/brand/Asset-1.svg` & `public/brand/malak-logo-dark-bg.svg` | Authentic vector logo from official Brand PDF & `Asset 1` (`237×104`) | Reversed white logo + `#FF4FA3` accent for dark surfaces (hero navbar, open menu, dark-brown footer) |
+| `public/brand/malak-logo-light-bg.svg` | Authentic vector logo from Brand PDF Page 2 & 4 (`237×104`) | Approved light-background logo (`#A83232` mark + `#3A1F1B` text + `#FF4FA3` accent) for sticky/scrolled ivory navbar |
+| `public/brand/Asset-1.png` | Owner-supplied PNG logo (`237×104`) | Preserved raster copy of reversed logo |
+| `public/icon.svg` & `public/favicon.ico` | Favicon adaptation derived from authentic `M` logo path (`16×16`, `32×32`, `48×48`) | Browser tab favicon (SVG + multi-size ICO) |
+| `public/apple-touch-icon.png`, `public/icon-192.png`, `public/icon-512.png`, `public/site.webmanifest` | App icons derived from authentic `M` logo path (`180×180`, `192×192`, `512×512`) | iOS Apple Touch Icon and Web App Manifest icons |
+| `public/brand/og-default-1200x630.png` | Branded social link preview image (`1200×630` PNG) | Default Open Graph and Twitter `summary_large_image` card |
 
 ## Governance Notes
 - The real doctor portrait is now supplied and used prominently in the Homepage Hero and About page. Her facial features, skin tone, expression, hijab, and white coat are preserved without AI alteration.

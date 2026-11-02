@@ -1,9 +1,15 @@
 :root {
-  /* Locked Brand Palette */
+  /* Approved Brand Color System (Brand Guidelines PDF Page 3) */
   --brand-red: #a83232;
   --brand-cream: #fffcf0;
-  --color-ink: #332725;
-  --color-border: #e6d8cf;
+  --color-burgundy: #a83232;
+  --color-peach: #f2d6b3;
+  --color-warm-orange: #d96b2b;
+  --color-dark-brown: #3a1f1b;
+  --color-ivory: #fffcf0;
+
+  --color-ink: #3a1f1b;
+  --color-border: #dec6ae;
 
   /* Editorial Surface & Tone Tokens */
   --ed-red-deep: #a83232;
@@ -11,13 +17,19 @@
   --ed-ivory-canvas: #fffcf0;
   --ed-ivory-warm: #f6f0e2;
   --ed-ivory-stone: #efe7d5;
-  --ed-ink-primary: #332725;
-  --ed-ink-secondary: #5a4845;
-  --ed-ink-subtle: #7a6662;
+  --ed-peach-surface: #f2d6b3;
+  --ed-peach-tint: #f8e8d2;
+  --ed-orange-accent: #d96b2b;
+  --ed-brown-deep: #3a1f1b;
+  --ed-ink-primary: #3a1f1b;
+  --ed-ink-secondary: #4e312c;
+  --ed-ink-subtle: #66453f;
   --ed-rule-ivory: rgba(255, 252, 240, 0.22);
   --ed-rule-ivory-strong: rgba(255, 252, 240, 0.45);
-  --ed-rule-ink: #e2d4c8;
+  --ed-rule-ink: #dec6ae;
+  --ed-rule-brown: rgba(58, 31, 27, 0.2);
   --ed-rule-red: rgba(168, 50, 50, 0.28);
+  --ed-rule-orange: #d96b2b;
 
   /* Authentic Typography Tokens */
   --font-display: "alghraib", "Segoe UI", Tahoma, "Geeza Pro", system-ui, sans-serif;
@@ -44,8 +56,7 @@
   --space-section: clamp(4.5rem, 8.5vw, 7.75rem);
   --ed-space-section: clamp(4.5rem, 8.5vw, 7.75rem);
   --ed-space-cluster: clamp(2rem, 4vw, 3.75rem);
-  --ed-nav-height: 4.75rem;
+  --ed-nav-height: 5.25rem;
   --radius-control: 4px;
   --ed-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
-

@@ -360,19 +360,30 @@ async function main() {
       focusRestored: true,
     });
 
+    const waitForPath = async (expectedPath) => {
+      for (let i = 0; i < 25; i++) {
+        const cur = await evaluateJs(
+          send,
+          sessionId,
+          `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
+        );
+        if (cur.path === expectedPath) return cur;
+        await sleep(200);
+      }
+      return evaluateJs(
+        send,
+        sessionId,
+        `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
+      );
+    };
+
     // Click language switcher link (client-side transition to /en)
     await evaluateJs(
       send,
       sessionId,
       `document.querySelector('header .lang-switch').click()`
     );
-    await sleep(1200);
-
-    docState = await evaluateJs(
-      send,
-      sessionId,
-      `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
-    );
+    docState = await waitForPath("/en");
     assert.deepEqual(
       docState,
       { lang: "en", dir: "ltr", path: "/en" },
@@ -385,32 +396,16 @@ async function main() {
       sessionId,
       `document.querySelector('header .lang-switch').click()`
     );
-    await sleep(1200);
-
-    docState = await evaluateJs(
-      send,
-      sessionId,
-      `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
-    );
+    docState = await waitForPath("/ar");
     assert.deepEqual(docState, { lang: "ar", dir: "rtl", path: "/ar" });
 
     // Browser Back & Forward
     await evaluateJs(send, sessionId, `history.back()`);
-    await sleep(900);
-    docState = await evaluateJs(
-      send,
-      sessionId,
-      `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
-    );
+    docState = await waitForPath("/en");
     assert.deepEqual(docState, { lang: "en", dir: "ltr", path: "/en" });
 
     await evaluateJs(send, sessionId, `history.forward()`);
-    await sleep(900);
-    docState = await evaluateJs(
-      send,
-      sessionId,
-      `({ lang: document.documentElement.lang, dir: document.documentElement.dir, path: location.pathname })`
-    );
+    docState = await waitForPath("/ar");
     assert.deepEqual(docState, { lang: "ar", dir: "rtl", path: "/ar" });
     console.log(
       "  [PASS] Locale lifecycle & Minimal Navigation full-screen overlay verified."
@@ -843,6 +838,286 @@ async function main() {
       "Draft articles must never appear in sitemap.xml"
     );
     console.log("  [PASS] SEO Metadata & Sitemap verified.");
+
+    // =========================================================================
+    // TEST 6B: Brand Integration (Navbar SVG Logo, Favicons, 1200x630 OG, Secondary Palette & WCAG Contrast)
+    // =========================================================================
+    console.log(
+      "6B. Verifying Brand Integration (Navbar Logo Dark/Light states, Favicons, 1200x630 Social Preview, Secondary Colors & Contrast)..."
+    );
+
+    // Verify all favicon, manifest, logo, and social preview HTTP endpoints return 200
+    const brandAssetPaths = [
+      "/favicon.ico",
+      "/icon.svg",
+      "/apple-touch-icon.png",
+      "/icon-192.png",
+      "/icon-512.png",
+      "/site.webmanifest",
+      "/brand/Asset-1.svg",
+      "/brand/malak-logo-dark-bg.svg",
+      "/brand/malak-logo-light-bg.svg",
+      "/brand/og-default-1200x630.png",
+    ];
+    for (const assetPath of brandAssetPaths) {
+      const res = await fetch(`${TARGET_BASE_URL}${assetPath}`);
+      assert.equal(
+        res.status,
+        200,
+        `Expected HTTP 200 for brand asset ${assetPath}, got ${res.status}`
+      );
+    }
+
+    // Navigate to /ar at 1440w desktop and verify top dark-header logo, scrolled light-header logo, open menu logo, footer logo, favicons, OG metadata, and secondary colors
+    await setViewport(1440, 920);
+    await send("Page.navigate", { url: `${TARGET_BASE_URL}/ar` }, sessionId);
+    await sleep(1100);
+    await evaluateJs(send, sessionId, `window.scrollTo({ top: 0, behavior: 'instant' })`);
+    await sleep(250);
+
+    const desktopDarkLogoAndMeta = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const header = document.querySelector('.ed-minimal-header');
+        const link = header?.querySelector('a.ed-brand-lockup');
+        const svg = link?.querySelector('svg.ed-brand-logo-svg');
+        const paths = Array.from(svg?.querySelectorAll('path') || []);
+        const fills = Array.from(svg?.querySelectorAll('path, g') || []).map(p => p.getAttribute('fill')).filter(Boolean);
+        const footer = document.querySelector('.ed-red-footer');
+        const footerSvg = footer?.querySelector('svg.ed-brand-logo-svg');
+        const ogImage = document.querySelector('meta[property="og:image"]')?.content || '';
+        const ogWidth = document.querySelector('meta[property="og:image:width"]')?.content || '';
+        const ogHeight = document.querySelector('meta[property="og:image:height"]')?.content || '';
+        const ogType = document.querySelector('meta[property="og:image:type"]')?.content || '';
+        const ogAlt = document.querySelector('meta[property="og:image:alt"]')?.content || '';
+        const twCard = document.querySelector('meta[name="twitter:card"]')?.content || '';
+        const twImage = document.querySelector('meta[name="twitter:image"]')?.content || '';
+        const iconLinks = Array.from(document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"], link[rel="manifest"]')).map(l => l.getAttribute('href'));
+        const rect = svg?.getBoundingClientRect();
+        return {
+          headerScrolled: header?.classList.contains('is-scrolled'),
+          headerBg: header ? getComputedStyle(header).backgroundColor : '',
+          linkHref: link?.getAttribute('href'),
+          linkAriaLabel: link?.getAttribute('aria-label') || '',
+          svgVariant: svg?.getAttribute('data-brand-logo-variant'),
+          pathCount: paths.length,
+          hasWhiteArtwork: fills.includes('#FFFFFF'),
+          hasPinkSparkle: fills.includes('#FF4FA3'),
+          logoWidth: rect?.width || 0,
+          logoHeight: rect?.height || 0,
+          footerBg: footer ? getComputedStyle(footer).backgroundColor : '',
+          footerLogoVariant: footerSvg?.getAttribute('data-brand-logo-variant'),
+          ogImage,
+          ogWidth,
+          ogHeight,
+          ogType,
+          ogAlt,
+          twCard,
+          twImage,
+          iconLinks,
+        };
+      })()`
+    );
+
+    assert.equal(desktopDarkLogoAndMeta.headerScrolled, false);
+    assert.equal(desktopDarkLogoAndMeta.linkHref, "/ar");
+    assert.equal(desktopDarkLogoAndMeta.linkAriaLabel.includes("د. ملاك السيف"), true);
+    assert.equal(desktopDarkLogoAndMeta.svgVariant, "on-dark");
+    assert.equal(desktopDarkLogoAndMeta.pathCount, 36);
+    assert.equal(desktopDarkLogoAndMeta.hasWhiteArtwork, true);
+    assert.equal(desktopDarkLogoAndMeta.hasPinkSparkle, true);
+    assert.ok(desktopDarkLogoAndMeta.logoWidth >= 100 && desktopDarkLogoAndMeta.logoHeight >= 40);
+    assert.equal(desktopDarkLogoAndMeta.footerBg, "rgb(58, 31, 27)");
+    assert.equal(desktopDarkLogoAndMeta.footerLogoVariant, "on-dark");
+    assert.equal(
+      desktopDarkLogoAndMeta.ogImage.endsWith("/brand/og-default-1200x630.png"),
+      true,
+      `Expected default og:image to end with /brand/og-default-1200x630.png, got ${desktopDarkLogoAndMeta.ogImage}`
+    );
+    assert.equal(desktopDarkLogoAndMeta.ogWidth, "1200");
+    assert.equal(desktopDarkLogoAndMeta.ogHeight, "630");
+    assert.equal(desktopDarkLogoAndMeta.ogType, "image/png");
+    assert.equal(desktopDarkLogoAndMeta.ogAlt.includes("د. ملاك السيف"), true);
+    assert.equal(desktopDarkLogoAndMeta.twCard, "summary_large_image");
+    assert.equal(
+      desktopDarkLogoAndMeta.twImage.endsWith("/brand/og-default-1200x630.png"),
+      true
+    );
+    assert.equal(
+      desktopDarkLogoAndMeta.iconLinks.some((h) => h?.includes("/icon.svg")),
+      true
+    );
+    assert.equal(
+      desktopDarkLogoAndMeta.iconLinks.some((h) => h?.includes("/apple-touch-icon.png")),
+      true
+    );
+
+    // Scroll down to trigger sticky ivory header and verify light-background logo treatment
+    await evaluateJs(send, sessionId, `window.scrollTo({ top: 520, behavior: 'instant' })`);
+    await sleep(300);
+
+    const desktopLightScrolledLogo = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const header = document.querySelector('.ed-minimal-header');
+        const svg = header?.querySelector('svg.ed-brand-logo-svg');
+        const fills = Array.from(svg?.querySelectorAll('path, g') || []).map(p => p.getAttribute('fill')).filter(Boolean);
+        return {
+          headerScrolled: header?.classList.contains('is-scrolled'),
+          headerBg: header ? getComputedStyle(header).backgroundColor : '',
+          svgVariant: svg?.getAttribute('data-brand-logo-variant'),
+          hasWhiteArtwork: fills.includes('#FFFFFF'),
+          hasBurgundyMark: fills.includes('#A83232'),
+          hasDarkBrownSubtext: fills.includes('#3A1F1B'),
+          hasPinkSparkle: fills.includes('#FF4FA3'),
+        };
+      })()`
+    );
+    assert.equal(desktopLightScrolledLogo.headerScrolled, true);
+    assert.equal(desktopLightScrolledLogo.svgVariant, "on-light");
+    assert.equal(
+      desktopLightScrolledLogo.hasWhiteArtwork,
+      false,
+      "White logo artwork must NEVER be placed on the scrolled ivory header"
+    );
+    assert.equal(desktopLightScrolledLogo.hasBurgundyMark, true);
+    assert.equal(desktopLightScrolledLogo.hasDarkBrownSubtext, true);
+    assert.equal(desktopLightScrolledLogo.hasPinkSparkle, true);
+
+    await captureScreenshot(
+      send,
+      sessionId,
+      "20-brand-navbar-scrolled-light-1440w.png",
+      { copyToArtifact: true }
+    );
+
+    // Verify Secondary Color System & WCAG Contrast across sections
+    const secondaryPaletteCheck = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        function parseRgb(str) {
+          const m = str.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+          return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [0, 0, 0];
+        }
+        function lum([r, g, b]) {
+          const a = [r, g, b].map((v) => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+          });
+          return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        }
+        function ratio(rgb1, rgb2) {
+          const l1 = lum(rgb1);
+          const l2 = lum(rgb2);
+          return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+        }
+
+        const rootStyles = getComputedStyle(document.documentElement);
+        const docSection = document.querySelector('#doctor-section');
+        const docHeading = docSection?.querySelector('.ed-doctor-spread-heading');
+        const stepsSection = document.querySelector('#consultation-steps-section');
+        const activeStepBtn = stepsSection?.querySelector('.ed-step-control-btn.is-active');
+        const activeStepNum = activeStepBtn?.querySelector('.ed-step-control-num');
+        const journalCat = document.querySelector('.ed-journal-category');
+
+        const docBg = docSection ? parseRgb(getComputedStyle(docSection).backgroundColor) : [0,0,0];
+        const docText = docHeading ? parseRgb(getComputedStyle(docHeading).color) : [0,0,0];
+        const stepNumBg = activeStepNum ? parseRgb(getComputedStyle(activeStepNum).backgroundColor) : [0,0,0];
+        const stepNumColor = activeStepNum ? parseRgb(getComputedStyle(activeStepNum).color) : [0,0,0];
+        const catBg = journalCat ? parseRgb(getComputedStyle(journalCat).backgroundColor) : [0,0,0];
+        const catText = journalCat ? parseRgb(getComputedStyle(journalCat).color) : [0,0,0];
+
+        return {
+          tokenBurgundy: rootStyles.getPropertyValue('--color-burgundy').trim().toUpperCase(),
+          tokenPeach: rootStyles.getPropertyValue('--color-peach').trim().toUpperCase(),
+          tokenOrange: rootStyles.getPropertyValue('--color-warm-orange').trim().toUpperCase(),
+          tokenDarkBrown: rootStyles.getPropertyValue('--color-dark-brown').trim().toUpperCase(),
+          tokenIvory: rootStyles.getPropertyValue('--color-ivory').trim().toUpperCase(),
+          docSectionBg: docSection ? getComputedStyle(docSection).backgroundColor : '',
+          activeStepBtnBg: activeStepBtn ? getComputedStyle(activeStepBtn).backgroundColor : '',
+          stepNumBgStr: activeStepNum ? getComputedStyle(activeStepNum).backgroundColor : '',
+          stepNumColorStr: activeStepNum ? getComputedStyle(activeStepNum).color : '',
+          contrastDocSpread: ratio(docBg, docText),
+          contrastStepNumOnDarkBrown: ratio(stepNumBg, stepNumColor),
+          contrastJournalBadge: ratio(catBg, catText),
+        };
+      })()`
+    );
+
+    assert.equal(secondaryPaletteCheck.tokenBurgundy, "#A83232");
+    assert.equal(secondaryPaletteCheck.tokenPeach, "#F2D6B3");
+    assert.equal(secondaryPaletteCheck.tokenOrange, "#D96B2B");
+    assert.equal(secondaryPaletteCheck.tokenDarkBrown, "#3A1F1B");
+    assert.equal(secondaryPaletteCheck.tokenIvory, "#FFFCF0");
+    assert.equal(secondaryPaletteCheck.docSectionBg, "rgb(242, 214, 179)"); // #F2D6B3 Peach
+    assert.equal(secondaryPaletteCheck.activeStepBtnBg, "rgb(242, 214, 179)"); // #F2D6B3 Peach
+    assert.equal(secondaryPaletteCheck.stepNumBgStr, "rgb(58, 31, 27)"); // #3A1F1B Dark Brown
+    assert.equal(secondaryPaletteCheck.stepNumColorStr, "rgb(217, 107, 43)"); // #D96B2B Warm Orange
+    assert.ok(
+      secondaryPaletteCheck.contrastDocSpread >= 10,
+      `Expected Dark Brown on Peach contrast >= 10, got ${secondaryPaletteCheck.contrastDocSpread}`
+    );
+    assert.ok(
+      secondaryPaletteCheck.contrastStepNumOnDarkBrown >= 4.2,
+      `Expected Warm Orange large bold step number on Dark Brown contrast >= 4.2, got ${secondaryPaletteCheck.contrastStepNumOnDarkBrown}`
+    );
+    assert.ok(
+      secondaryPaletteCheck.contrastJournalBadge >= 10,
+      `Expected Dark Brown on Peach journal badge contrast >= 10, got ${secondaryPaletteCheck.contrastJournalBadge}`
+    );
+
+    // Verify Mobile (390w) scrolled light header logo & zero horizontal clipping
+    await setViewport(390, 844);
+    await evaluateJs(send, sessionId, `window.scrollTo({ top: 520, behavior: 'instant' })`);
+    await sleep(300);
+    const mobileHeaderBounds = await evaluateJs(
+      send,
+      sessionId,
+      `(() => {
+        const selectors = ['a.ed-brand-lockup', '.ed-header-lang', '.ed-header-consult-btn', '.ed-menu-trigger-btn'];
+        return selectors.map(sel => {
+          const r = document.querySelector(sel)?.getBoundingClientRect();
+          return { sel, left: Math.round(r?.left ?? -1), right: Math.round(r?.right ?? 999) };
+        });
+      })()`
+    );
+    for (const item of mobileHeaderBounds) {
+      assert.ok(
+        item.left >= 8 && item.right <= 382,
+        `Expected mobile header item ${item.sel} within [8, 382] on 390px viewport, got [${item.left}, ${item.right}]`
+      );
+    }
+    await captureScreenshot(
+      send,
+      sessionId,
+      "21-brand-navbar-scrolled-light-390w-mobile.png",
+      { copyToArtifact: true }
+    );
+
+    // Verify article-specific Open Graph image is preserved on article detail routes
+    await setViewport(1440, 920);
+    await send(
+      "Page.navigate",
+      { url: `${TARGET_BASE_URL}/ar/articles/preparing-for-consultation` },
+      sessionId
+    );
+    await sleep(1000);
+    const articleOgImage = await evaluateJs(
+      send,
+      sessionId,
+      `document.querySelector('meta[property="og:image"]')?.content || ''`
+    );
+    assert.equal(
+      articleOgImage.includes("/images/generated/article-"),
+      true,
+      `Article detail page must preserve its own article cover image in og:image, got: ${articleOgImage}`
+    );
+    console.log(
+      "  [PASS] Brand Integration (Navbar SVG Logo, Favicons, 1200x630 Social Preview, Secondary Colors & Contrast) verified."
+    );
 
     // =========================================================================
     // TEST 7: Scroll-Through & Multi-Viewport Screenshot Capture (AR & EN at 390px, 768px, 1440px)

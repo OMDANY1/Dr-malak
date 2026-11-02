@@ -1,7 +1,19 @@
+import type { Metadata } from "next";
 import { siteConfig } from "./content";
 import { Locale } from "./locales";
 
 const DEFAULT_PREVIEW_ORIGIN = "https://dr-malak-alsaif-preview.vercel.app";
+
+export const DEFAULT_SOCIAL_IMAGE_PATH = "/brand/og-default-1200x630.png";
+export const DEFAULT_SOCIAL_IMAGE_WIDTH = 1200;
+export const DEFAULT_SOCIAL_IMAGE_HEIGHT = 630;
+export const DEFAULT_SOCIAL_IMAGE_TYPE = "image/png";
+
+export function getDefaultSocialImageAlt(locale: Locale): string {
+  return locale === "ar"
+    ? "د. ملاك السيف — استشارية جراحة التجميل والترميم"
+    : "Dr. Malak Alsaif — Consultant Plastic & Reconstructive Surgeon";
+}
 
 /**
  * Resolves the canonical base origin for metadata, OpenGraph, JSON-LD, and sitemap.xml.
@@ -21,7 +33,7 @@ export function getBaseUrl(): string {
 }
 
 /**
- * Converts a relative path (e.g. "/ar/about" or "/images/doctor/dr-malak-alsaif.jpg")
+ * Converts a relative path (e.g. "/ar/about" or "/brand/og-default-1200x630.png")
  * into a full absolute URL using getBaseUrl().
  */
 export function toAbsoluteUrl(pathOrUrl: string): string {
@@ -53,6 +65,86 @@ export function buildPageAlternates(locale: Locale, subPath: string = "") {
       ar: arUrl,
       en: enUrl,
       "x-default": arUrl,
+    },
+  };
+}
+
+export interface BuildSocialMetadataOptions {
+  locale: Locale;
+  title: string;
+  description: string;
+  url: string;
+  type?: "website" | "article" | "profile";
+  imagePath?: string | null;
+  imageAlt?: string;
+}
+
+/**
+ * Builds consistent OpenGraph and Twitter Card metadata using the default
+ * 1200x630 branded PNG unless an intentional article/specialty social image is provided.
+ */
+export function buildSocialMetadata({
+  locale,
+  title,
+  description,
+  url,
+  type = "website",
+  imagePath,
+  imageAlt,
+}: BuildSocialMetadataOptions): Pick<Metadata, "openGraph" | "twitter"> {
+  const resolvedImagePath =
+    imagePath &&
+    imagePath.trim() !== "" &&
+    imagePath !== "/images/doctor/dr-malak-alsaif.jpg"
+      ? imagePath.trim()
+      : DEFAULT_SOCIAL_IMAGE_PATH;
+
+  const isDefaultBrandCard = resolvedImagePath === DEFAULT_SOCIAL_IMAGE_PATH;
+  const absoluteImageUrl = toAbsoluteUrl(resolvedImagePath);
+  const resolvedAlt =
+    isDefaultBrandCard || !imageAlt
+      ? getDefaultSocialImageAlt(locale)
+      : imageAlt;
+
+  const imageEntry = isDefaultBrandCard
+    ? {
+        url: absoluteImageUrl,
+        width: DEFAULT_SOCIAL_IMAGE_WIDTH,
+        height: DEFAULT_SOCIAL_IMAGE_HEIGHT,
+        type: DEFAULT_SOCIAL_IMAGE_TYPE,
+        alt: resolvedAlt,
+      }
+    : {
+        url: absoluteImageUrl,
+        alt: resolvedAlt,
+      };
+
+  return {
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: siteConfig.name[locale],
+      locale: locale === "ar" ? "ar_SA" : "en_US",
+      type,
+      images: [imageEntry],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [
+        {
+          url: absoluteImageUrl,
+          alt: resolvedAlt,
+          ...(isDefaultBrandCard
+            ? {
+                width: DEFAULT_SOCIAL_IMAGE_WIDTH,
+                height: DEFAULT_SOCIAL_IMAGE_HEIGHT,
+              }
+            : {}),
+        },
+      ],
     },
   };
 }

@@ -1,9 +1,13 @@
 import React from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCopy, siteConfig } from "@/lib/content";
+import { getCopy } from "@/lib/content";
 import { isValidLocale } from "@/lib/locales";
-import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
+import {
+  buildPageAlternates,
+  buildSocialMetadata,
+  DEFAULT_SOCIAL_IMAGE_PATH,
+} from "@/lib/seo";
 import { TypographicRedHero } from "@/components/editorial/TypographicRedHero";
 import { SpecialtyGallery } from "@/components/editorial/SpecialtyGallery";
 import { DoctorEditorialSpread } from "@/components/editorial/DoctorEditorialSpread";
@@ -43,7 +47,7 @@ export async function generateMetadata({
     copy.homeMeta.description
   );
   const socialImg =
-    cms.contactSettings.globalSeo.socialImage || siteConfig.doctorPortrait;
+    cms.contactSettings.globalSeo.socialImage || DEFAULT_SOCIAL_IMAGE_PATH;
 
   return {
     title: seoTitle,
@@ -52,23 +56,14 @@ export async function generateMetadata({
       ? { robots: { index: false, follow: false } }
       : {}),
     alternates,
-    openGraph: {
+    ...buildSocialMetadata({
+      locale,
       title: seoTitle,
       description: seoDesc,
       url: alternates.canonical,
-      locale: locale === "ar" ? "ar_SA" : "en_US",
       type: "website",
-      ...(socialImg
-        ? {
-            images: [
-              {
-                url: toAbsoluteUrl(socialImg),
-                alt: copy.hero.portraitAlt,
-              },
-            ],
-          }
-        : {}),
-    },
+      imagePath: socialImg,
+    }),
   };
 }
 

@@ -3,7 +3,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCopy } from "@/lib/content";
 import { isValidLocale } from "@/lib/locales";
-import { buildPageAlternates } from "@/lib/seo";
+import {
+  buildPageAlternates,
+  buildSocialMetadata,
+  DEFAULT_SOCIAL_IMAGE_PATH,
+} from "@/lib/seo";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 
 interface PageProps {
@@ -22,6 +26,14 @@ export async function generateMetadata({
     title: copy.privacyPage.meta.title,
     description: copy.privacyPage.meta.description,
     alternates,
+    ...buildSocialMetadata({
+      locale,
+      title: copy.privacyPage.meta.title,
+      description: copy.privacyPage.meta.description,
+      url: alternates.canonical,
+      type: "website",
+      imagePath: DEFAULT_SOCIAL_IMAGE_PATH,
+    }),
   };
 }
 

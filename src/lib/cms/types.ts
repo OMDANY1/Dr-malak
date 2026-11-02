@@ -108,6 +108,8 @@ export interface CmsFaqDocument {
 export interface CmsContactSettingsDocument {
   siteName: LocalizedText;
   siteSubtitle: LocalizedText;
+  brandLogoLight?: string;
+  brandLogoDark?: string;
   phone: string;
   whatsappDigits: string;
   defaultWhatsappMessage: LocalizedText;

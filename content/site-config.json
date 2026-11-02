@@ -15,7 +15,9 @@
   "siteUrl": null,
   "previewNoIndex": true,
   "doctorPortrait": "/images/doctor/dr-malak-alsaif.jpg",
-  "approvedLogo": null,
+  "approvedLogo": "/brand/malak-logo-light-bg.svg",
+  "approvedLogoReversed": "/brand/malak-logo-dark-bg.svg",
+  "defaultSocialImage": "/brand/og-default-1200x630.png",
   "fontsStatus": "elgharib-supplied-stc-pending",
   "collectsLeadForms": false
 }

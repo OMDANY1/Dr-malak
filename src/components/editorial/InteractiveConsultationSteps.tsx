@@ -109,6 +109,18 @@ export function InteractiveConsultationSteps({
             <p className="ed-steps-header-subtitle">{sectionSubtitle}</p>
           </div>
 
+          {/* Warm Orange & Peach Step Progress Bar */}
+          <div className="ed-steps-progress-bar" aria-hidden="true">
+            {steps.map((step, idx) => (
+              <span
+                key={`prog-${step.number}`}
+                className={`ed-steps-progress-segment ${
+                  idx <= activeIndex ? "is-filled" : ""
+                } ${idx === activeIndex ? "is-current" : ""}`.trim()}
+              />
+            ))}
+          </div>
+
           {/* Three Numbered Step Controls (Understandable with or without animation) */}
           <div
             className="ed-steps-controls-bar"
@@ -140,6 +152,12 @@ export function InteractiveConsultationSteps({
                       {step.number}
                     </span>
                     <span className="ed-step-control-title">{step.title}</span>
+                    <span
+                      className="ed-step-selected-indicator"
+                      aria-hidden="true"
+                    >
+                      {isSelected ? "●" : "○"}
+                    </span>
                   </div>
                   <span className="ed-step-control-preview">
                     {step.description}

@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import { getCopy, siteConfig } from "@/lib/content";
 import { getWhatsAppUrl } from "@/lib/links";
 import { isValidLocale } from "@/lib/locales";
-import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
+import {
+  buildPageAlternates,
+  buildSocialMetadata,
+  DEFAULT_SOCIAL_IMAGE_PATH,
+} from "@/lib/seo";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
 import { InteractiveConsultationSteps } from "@/components/editorial/InteractiveConsultationSteps";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
@@ -36,23 +40,14 @@ export async function generateMetadata({
       ? { robots: { index: false, follow: false } }
       : {}),
     alternates,
-    openGraph: {
+    ...buildSocialMetadata({
+      locale,
       title: copy.specialtiesPage.meta.title,
       description: copy.specialtiesPage.meta.description,
       url: alternates.canonical,
-      locale: locale === "ar" ? "ar_SA" : "en_US",
       type: "website",
-      ...(siteConfig.doctorPortrait
-        ? {
-            images: [
-              {
-                url: toAbsoluteUrl(siteConfig.doctorPortrait),
-                alt: copy.hero.portraitAlt,
-              },
-            ],
-          }
-        : {}),
-    },
+      imagePath: DEFAULT_SOCIAL_IMAGE_PATH,
+    }),
   };
 }
 

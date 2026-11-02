@@ -161,10 +161,20 @@ if (
       const localUser = reopenDb
         .prepare("SELECT * FROM cms_users WHERE email = ?")
         .get(email);
+      const localDocs = reopenDb
+        .prepare("SELECT * FROM cms_documents")
+        .all();
+      const localMedia = reopenDb
+        .prepare("SELECT * FROM cms_media_assets")
+        .all();
       reopenDb.close();
       if (bundle && Array.isArray(bundle.cms_users) && localUser) {
-        bundle.cms_users = bundle.cms_users.filter((u) => u.email !== email);
+        bundle.cms_users = bundle.cms_users.filter(
+          (u) => u.email !== email && u.email !== "verify-owner@drmalak.local"
+        );
         bundle.cms_users.push(localUser);
+        if (localDocs.length > 0) bundle.cms_documents = localDocs;
+        if (localMedia.length > 0) bundle.cms_media_assets = localMedia;
         bundle.exportedAt = new Date().toISOString();
         await fetch(
           `${supUrl}/storage/v1/object/cms-private-media/cms-state/state-bundle.json`,

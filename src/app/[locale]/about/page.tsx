@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import { getCopy, siteConfig } from "@/lib/content";
 import { getInstagramUrl, getWhatsAppUrl } from "@/lib/links";
 import { isValidLocale } from "@/lib/locales";
-import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
+import {
+  buildPageAlternates,
+  buildSocialMetadata,
+  DEFAULT_SOCIAL_IMAGE_PATH,
+} from "@/lib/seo";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { StructuredData } from "@/components/seo/StructuredData";
@@ -41,7 +45,8 @@ export async function generateMetadata({
     locale,
     copy.aboutPage.meta.description
   );
-  const portraitSrc = dp.portraitImage || siteConfig.doctorPortrait;
+  const socialImg =
+    cms.contactSettings.globalSeo.socialImage || DEFAULT_SOCIAL_IMAGE_PATH;
 
   return {
     title: metaTitle,
@@ -50,27 +55,14 @@ export async function generateMetadata({
       ? { robots: { index: false, follow: false } }
       : {}),
     alternates,
-    openGraph: {
+    ...buildSocialMetadata({
+      locale,
       title: metaTitle,
       description: metaDesc,
       url: alternates.canonical,
-      locale: locale === "ar" ? "ar_SA" : "en_US",
       type: "profile",
-      ...(portraitSrc
-        ? {
-            images: [
-              {
-                url: toAbsoluteUrl(portraitSrc),
-                alt: resolveLocalizedText(
-                  dp.portraitAlt,
-                  locale,
-                  copy.aboutPage.portraitAlt
-                ),
-              },
-            ],
-          }
-        : {}),
-    },
+      imagePath: socialImg,
+    }),
   };
 }
 

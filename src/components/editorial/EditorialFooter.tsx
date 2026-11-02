@@ -12,6 +12,7 @@ import { Locale, localizePath } from "@/lib/locales";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
 import { resolveLocalizedText } from "@/lib/cms/sanitize";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 interface EditorialFooterProps {
   locale: Locale;
@@ -59,9 +60,17 @@ export function EditorialFooter({ locale }: EditorialFooterProps) {
             <Link
               href={localizePath(locale, "")}
               className="ed-red-footer-logo"
+              aria-label={`${brandName} — ${brandSubtitle}`}
             >
-              <span className="brand-name ed-red-footer-name">{brandName}</span>
-              <span className="ed-red-footer-subtitle">{brandSubtitle}</span>
+              <BrandLogo
+                variant="on-dark"
+                locale={locale}
+                idPrefix="footer-brand-logo"
+                className="ed-footer-logo-svg"
+              />
+              <span className="sr-only">
+                {brandName} — {brandSubtitle}
+              </span>
             </Link>
             <p className="ed-red-footer-disclaimer">{copy.footer.disclaimer}</p>
           </div>

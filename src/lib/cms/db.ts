@@ -352,6 +352,47 @@ export function seedDatabaseIfNeeded(dbInstance?: DatabaseSync): {
     }
   }
 
+  // Non-destructively upgrade legacy default socialImage and brandLogo paths on existing contactSettings
+  const existingContactRow = db
+    .prepare("SELECT draft_data, published_data FROM cms_documents WHERE key = 'contactSettings'")
+    .get() as { draft_data: string; published_data: string } | undefined;
+  if (existingContactRow) {
+    const upgradeContactObj = (rawJson: string): { updated: boolean; json: string } => {
+      try {
+        const parsed = JSON.parse(rawJson) as CmsContactSettingsDocument;
+        let updated = false;
+        if (
+          !parsed.globalSeo?.socialImage ||
+          parsed.globalSeo.socialImage === "/images/doctor/dr-malak-alsaif.jpg"
+        ) {
+          parsed.globalSeo = {
+            ...parsed.globalSeo,
+            socialImage: "/brand/og-default-1200x630.png",
+          };
+          updated = true;
+        }
+        if (!parsed.brandLogoLight) {
+          parsed.brandLogoLight = "/brand/malak-logo-light-bg.svg";
+          updated = true;
+        }
+        if (!parsed.brandLogoDark) {
+          parsed.brandLogoDark = "/brand/malak-logo-dark-bg.svg";
+          updated = true;
+        }
+        return { updated, json: updated ? JSON.stringify(parsed) : rawJson };
+      } catch {
+        return { updated: false, json: rawJson };
+      }
+    };
+    const draftUp = upgradeContactObj(existingContactRow.draft_data);
+    const pubUp = upgradeContactObj(existingContactRow.published_data);
+    if (draftUp.updated || pubUp.updated) {
+      db.prepare(
+        "UPDATE cms_documents SET draft_data = ?, published_data = ? WHERE key = 'contactSettings'"
+      ).run(draftUp.json, pubUp.json);
+    }
+  }
+
   const insertSpec = db.prepare(`
     INSERT OR IGNORE INTO cms_specialties (
       id, slug, display_order, status, draft_data, published_data, published_at, updated_at, updated_by
@@ -948,6 +989,14 @@ function sanitizeContactSettingsDocument(
     siteSubtitle: obj.siteSubtitle
       ? sanitizeLocalizedText(obj.siteSubtitle, 250)
       : seed.siteSubtitle,
+    brandLogoLight: sanitizeUrl(
+      obj.brandLogoLight,
+      seed.brandLogoLight || "/brand/malak-logo-light-bg.svg"
+    ),
+    brandLogoDark: sanitizeUrl(
+      obj.brandLogoDark,
+      seed.brandLogoDark || "/brand/malak-logo-dark-bg.svg"
+    ),
     phone: rawPhone || seed.phone,
     whatsappDigits: rawWhatsappDigits || seed.whatsappDigits,
     defaultWhatsappMessage: obj.defaultWhatsappMessage
@@ -989,10 +1038,13 @@ function sanitizeContactSettingsDocument(
       defaultDescription: seoObj.defaultDescription
         ? sanitizeLocalizedText(seoObj.defaultDescription, 600)
         : seed.globalSeo.defaultDescription,
-      socialImage: sanitizeUrl(
-        seoObj.socialImage,
-        seed.globalSeo.socialImage
-      ),
+      socialImage:
+        seoObj.socialImage === "/images/doctor/dr-malak-alsaif.jpg"
+          ? "/brand/og-default-1200x630.png"
+          : sanitizeUrl(
+              seoObj.socialImage,
+              seed.globalSeo.socialImage
+            ),
     },
   };
 }
@@ -2698,6 +2750,7 @@ export function importDatabaseBundle(bundle: CmsRawDatabaseBundle): void {
     }
 
     db.exec("COMMIT");
+    seedDatabaseIfNeeded(db);
   } catch (err) {
     db.exec("ROLLBACK");
     throw err;

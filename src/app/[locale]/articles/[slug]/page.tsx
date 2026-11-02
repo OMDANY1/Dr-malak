@@ -16,7 +16,10 @@ import {
   Locale,
   localizePath,
 } from "@/lib/locales";
-import { toAbsoluteUrl } from "@/lib/seo";
+import {
+  DEFAULT_SOCIAL_IMAGE_PATH,
+  toAbsoluteUrl,
+} from "@/lib/seo";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { ArticleInteractiveEnhancements } from "@/components/articles/ArticleInteractiveEnhancements";
 import { isDraftPreviewRequest } from "@/lib/cms/auth";
@@ -93,7 +96,8 @@ export async function generateMetadata({
   const metaTitle =
     article.seoTitle || `${article.title} | ${siteConfig.name[locale]}`;
   const metaDesc = article.seoDescription || article.description;
-  const socialImg = article.socialImage || article.coverImage;
+  const socialImg =
+    article.socialImage || article.coverImage || DEFAULT_SOCIAL_IMAGE_PATH;
 
   return {
     title: metaTitle,
@@ -109,10 +113,22 @@ export async function generateMetadata({
       title: metaTitle,
       description: metaDesc,
       url: canonicalUrl,
+      siteName: siteConfig.name[locale],
       type: "article",
       locale: locale === "ar" ? "ar_SA" : "en_US",
       ...(article.publishedAt ? { publishedTime: article.publishedAt } : {}),
       ...(article.updatedAt ? { modifiedTime: article.updatedAt } : {}),
+      images: [
+        {
+          url: toAbsoluteUrl(socialImg),
+          alt: article.coverAlt,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: metaTitle,
+      description: metaDesc,
       images: [
         {
           url: toAbsoluteUrl(socialImg),

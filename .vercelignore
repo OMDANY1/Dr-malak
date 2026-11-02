@@ -3,9 +3,9 @@ node_modules
 .git
 .env
 .env.*
-docs
-agents
-brand
+/docs
+/agents
+/brand
 AGENTS.md
 CLAUDE.md
 README.md

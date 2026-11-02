@@ -9,7 +9,11 @@ import {
 } from "@/lib/articles";
 import { getWhatsAppUrl } from "@/lib/links";
 import { isValidLocale } from "@/lib/locales";
-import { buildPageAlternates, toAbsoluteUrl } from "@/lib/seo";
+import {
+  buildPageAlternates,
+  buildSocialMetadata,
+  DEFAULT_SOCIAL_IMAGE_PATH,
+} from "@/lib/seo";
 import { ArticlesExplorer } from "@/components/articles/ArticlesExplorer";
 import { FaqAndBooking } from "@/components/editorial/FaqAndBooking";
 import { isDraftPreviewRequest } from "@/lib/cms/auth";
@@ -38,23 +42,14 @@ export async function generateMetadata({
       ? { robots: { index: false, follow: false } }
       : {}),
     alternates,
-    openGraph: {
+    ...buildSocialMetadata({
+      locale,
       title: copy.articlesPage.meta.title,
       description: copy.articlesPage.meta.description,
       url: alternates.canonical,
-      locale: locale === "ar" ? "ar_SA" : "en_US",
       type: "website",
-      ...(siteConfig.doctorPortrait
-        ? {
-            images: [
-              {
-                url: toAbsoluteUrl(siteConfig.doctorPortrait),
-                alt: copy.hero.portraitAlt,
-              },
-            ],
-          }
-        : {}),
-    },
+      imagePath: DEFAULT_SOCIAL_IMAGE_PATH,
+    }),
   };
 }
 

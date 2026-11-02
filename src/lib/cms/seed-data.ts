@@ -497,6 +497,8 @@ export function buildSeedContactSettingsDocument(): CmsContactSettingsDocument {
       ar: siteConfig.subtitle.ar,
       en: siteConfig.subtitle.en,
     },
+    brandLogoLight: "/brand/malak-logo-light-bg.svg",
+    brandLogoDark: "/brand/malak-logo-dark-bg.svg",
     phone: siteConfig.contact.phone,
     whatsappDigits: siteConfig.contact.whatsappDigits,
     defaultWhatsappMessage: {
@@ -546,7 +548,7 @@ export function buildSeedContactSettingsDocument(): CmsContactSettingsDocument {
         en: enCopy.homeMeta.description,
       },
       socialImage:
-        siteConfig.doctorPortrait || "/images/doctor/dr-malak-alsaif.jpg",
+        siteConfig.defaultSocialImage || "/brand/og-default-1200x630.png",
     },
   };
 }
@@ -554,6 +556,69 @@ export function buildSeedContactSettingsDocument(): CmsContactSettingsDocument {
 export function buildSeedMediaAssets(): CmsMediaAsset[] {
   const nowIso = "2026-10-15T12:00:00.000Z";
   return [
+    {
+      id: "media-og-default-social",
+      filename: "og-default-1200x630.png",
+      originalName: "og-default-1200x630.png",
+      mimeType: "image/png",
+      sizeBytes: 38400,
+      width: 1200,
+      height: 630,
+      altText: {
+        ar: "د. ملاك السيف — استشارية جراحة التجميل والترميم",
+        en: "Dr. Malak Alsaif — Consultant Plastic & Reconstructive Surgeon",
+      },
+      focalPoint: { x: 50, y: 50 },
+      isPublic: true,
+      storageBucket: "public",
+      storagePath: "brand/og-default-1200x630.png",
+      publicUrl: "/brand/og-default-1200x630.png",
+      uploadedBy: "system",
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: "media-brand-logo-light",
+      filename: "malak-logo-light-bg.svg",
+      originalName: "malak-logo-light-bg.svg",
+      mimeType: "image/svg+xml",
+      sizeBytes: 5120,
+      width: 237,
+      height: 104,
+      altText: {
+        ar: "شعار د. ملاك السيف للخلفيات الفاتحة",
+        en: "Dr. Malak Alsaif logo for light backgrounds",
+      },
+      focalPoint: { x: 50, y: 50 },
+      isPublic: true,
+      storageBucket: "public",
+      storagePath: "brand/malak-logo-light-bg.svg",
+      publicUrl: "/brand/malak-logo-light-bg.svg",
+      uploadedBy: "system",
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: "media-brand-logo-dark",
+      filename: "malak-logo-dark-bg.svg",
+      originalName: "malak-logo-dark-bg.svg",
+      mimeType: "image/svg+xml",
+      sizeBytes: 5120,
+      width: 237,
+      height: 104,
+      altText: {
+        ar: "شعار د. ملاك السيف للخلفيات الداكنة",
+        en: "Dr. Malak Alsaif reversed logo for dark backgrounds",
+      },
+      focalPoint: { x: 50, y: 50 },
+      isPublic: true,
+      storageBucket: "public",
+      storagePath: "brand/malak-logo-dark-bg.svg",
+      publicUrl: "/brand/malak-logo-dark-bg.svg",
+      uploadedBy: "system",
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
     {
       id: "media-dr-malak-portrait",
       filename: "dr-malak-alsaif.jpg",

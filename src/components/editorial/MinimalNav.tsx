@@ -15,6 +15,7 @@ import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { ConsultationTriggerButton } from "@/components/interactive/ConsultationTriggerButton";
 import { useCmsSnapshot } from "@/components/cms/CmsSnapshotContext";
 import { resolveLocalizedText } from "@/lib/cms/sanitize";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 interface MinimalNavProps {
   locale: Locale;
@@ -169,11 +170,21 @@ export function MinimalNav({ locale }: MinimalNavProps) {
         }`.trim()}
       >
         <div className="ed-minimal-header-inner">
-          {/* Doctor's existing brand identity */}
-          <Link href={localizePath(locale, "")} className="ed-brand-lockup">
-            <span className="brand-name ed-brand-name">{brandName}</span>
-            <span className="ed-brand-sep" aria-hidden="true" />
-            <span className="ed-brand-subtitle">{brandSubtitle}</span>
+          {/* Authentic supplied brand logo with light/dark surface awareness */}
+          <Link
+            href={localizePath(locale, "")}
+            className="ed-brand-lockup"
+            aria-label={`${brandName} — ${brandSubtitle}`}
+          >
+            <BrandLogo
+              variant={isScrolled ? "on-light" : "on-dark"}
+              locale={locale}
+              idPrefix="header-brand-logo"
+              className="ed-navbar-logo"
+            />
+            <span className="sr-only">
+              {brandName} — {brandSubtitle}
+            </span>
           </Link>
 
           {/* Minimal Actions: Language Access + Consultation Action + Clearly Labeled Menu Button */}
@@ -188,7 +199,7 @@ export function MinimalNav({ locale }: MinimalNavProps) {
             <ConsultationTriggerButton
               label={copy.header.cta}
               topicId="general"
-              variant="ivory"
+              variant={isScrolled ? "primary" : "ivory"}
               className="ed-header-consult-btn"
               fallbackHref={whatsappUrl}
             />
@@ -238,11 +249,18 @@ export function MinimalNav({ locale }: MinimalNavProps) {
             <Link
               href={localizePath(locale, "")}
               className="ed-brand-lockup"
+              aria-label={`${brandName} — ${brandSubtitle}`}
               onClick={() => closeMenu(false)}
             >
-              <span className="brand-name ed-brand-name">{brandName}</span>
-              <span className="ed-brand-sep" aria-hidden="true" />
-              <span className="ed-brand-subtitle">{brandSubtitle}</span>
+              <BrandLogo
+                variant="on-dark"
+                locale={locale}
+                idPrefix="menu-brand-logo"
+                className="ed-navbar-logo"
+              />
+              <span className="sr-only">
+                {brandName} — {brandSubtitle}
+              </span>
             </Link>
 
             <div className="ed-fullscreen-menu-top-actions">

@@ -15,6 +15,8 @@ export interface SiteConfig {
   previewNoIndex: boolean;
   doctorPortrait: string | null;
   approvedLogo: string | null;
+  approvedLogoReversed?: string | null;
+  defaultSocialImage?: string | null;
   fontsStatus: string;
   collectsLeadForms: boolean;
 }
